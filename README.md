@@ -1,5 +1,5 @@
-# 🛡️ Laboratoire SOC Full‑Stack avec Splunk
-**Projet :** Lab SOC full-stack pour entraîner la **détection**, l’**alerte** et l’**investigation** avec **Splunk**, attaques simulées et mappage **MITRE ATT&CK**. 
+# 🛡️ Laboratoire SOC avec Splunk
+**Projet :** Lab SOC complet pour entraîner la **détection**, l’**alerte** et l’**investigation** avec **Splunk**, attaques simulées et mappage **MITRE ATT&CK**. 
 **Plateformes :** VMware, Ubuntu, Windows 11, Kali Linux, Splunk Enterprise. 
 
 ---  
@@ -23,13 +23,13 @@ Le laboratoire est idéal pour :
 ## 📐 Architecture  
 
 ### Réseau interne – VMnet2 (`10.0.0.0/24`)  
-  - `10.0.0.10`	Splunk SIEM (Ubuntu) - Collecte, corrélation, alertes  
-  - `10.0.0.20`	Windows 10 (IIS) - Honeypot (héberge `customer-data-dump.html`)  
-  - `10.0.0.30`	Kali Linux	Attaquant - Exécute curl, wget, nmap  
-  - `10.0.0.40`	Analyste (Ubuntu) - Accès tableau de bord Splunk  
+  - `10.7.0.10`	Splunk SIEM (Ubuntu) - Collecte, corrélation, alertes  
+  - `10.7.0.20`	Windows 10 (IIS) - Honeypot (héberge `customer-data-dump.html`)  
+  - `10.7.0.30`	Kali Linux	Attaquant - Exécute curl, wget, nmap  
+  - `10.7.0.40`	Analyste (Ubuntu) - Accès tableau de bord Splunk  
 > Tous les NIC internes sont connectés uniquement à VMnet2 afin que le trafic de test reste isolé.  
 
-### Réseau externe – VMnet3 (NAT)  
+### Réseau externe (NAT) – VMnet3 (`172.16.0.0/24`)  
   - Permet aux machines du réseau interne d’accéder à Internet (pour mises à jour + téléchargements).  
 > Aucun port entrant n’est exposé depuis l’extérieur ; le laboratoire reste complètement isolé.
 
