@@ -125,7 +125,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 ---
 
-### 🖥️ SOC-Kali (Attaquant)
+### 🖥️ SOC-ATK (Kali)
   **Specs** : 
   - OS : 👉 [Kali Linux ](https://www.kali.org/)
   - vCPU : 2
