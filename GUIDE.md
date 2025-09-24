@@ -1,20 +1,48 @@
+## 📑 Table des matières
+
+- [Phase 1 — Réseaux virtuels](#phase-1---réseaux-virtuels)
+  - [VMnet1 (Host-Only)](#vmnet1-host-only)
+  - [VMnet8 (NAT/DHCP)](#vmnet8-natdhcp)
+
+- [Phase 2 — Configuration des VMs](#phase-2---configuration-des-vms)
+  - [SOC-Splunk-Server](#️-soc-splunk-server)
+  - [SOC-W11](#️-soc-w11)
+  - [SOC-ATK](#️-soc-atk)
+  - [SOC-Workstation](#️-soc-workstation)
+
+- [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
+- [Phase 4 — Configuration des Forwarders & Logs](#phase-4---configuration-des-forwarders--logs)
+- [Phase 5 — Détection & Alerting](#phase-5---détection--alerting)
+- [Phase 6 — Investigation & Workflows](#phase-6---investigation--workflows)
+
+
+
+---
+
+
+
 ## Phase 1 - Réseaux virtuels
 
 ### 🎯 Objectif
-Définir 2 réseaux virtuels sous VMware : un réseau **isolé** pour la communication interne (Host-Only) du laboratoire et un réseau externe (NAT) permettant un accès internet temporaire afin d’installer les outils/mises à jour nécessaires.
+Mettre en place deux réseaux virtuels sous VMware pour le laboratoire :  
+  - Un réseau isolé (Host-Only) pour la communication interne entre les VMs du lab, sans passerelle vers l’extérieur.  
+  - Un réseau externe (NAT) pour fournir temporairement un accès internet aux VMs (mises à jour et téléchargements d’outils).  
+
 
 ### VMnet1 (Host-Only)
   - Créer/configurer un réseau Host-Only dédié.  
-  - Désactiver le DHCP.  
-  -  IP statiques seront attribuées dans le subnet `10.7.0.0/24`.  
-  > **Résultat ✅ :** Les VM connectées à ce réseau ne voient que les autres VM du même réseau (aucune sortie vers internet).  
+  - Désactiver le DHCP.
+  - Plage IP : `10.7.0.0/24` (adresses attribuées manuellement).
+  > **Résultat ✅ :** Les VMs connectées à VMnet1 communiquent entre elles uniquement, sans accès à internet ni au réseau physique de l’hôte.  
   ![VMnet1](./images/vmnet1.png)
 
 
 ### VMnet8 (NAT/DHCP)
-  - Activé par défaut.  
-  - Laisser DHCP activé.  
-  > **Résultat ✅ :** Les VM rattachées à ce réseau obtiennent une adresse IP dynamique via DHCP et peuvent accéder à internet pour télécharger les outils et effectuer les updates nécessaires.  
+  - Activé par défaut dans VMware.
+  - Laisser le DHCP activé (distribution auto d’adresses).
+  - Plage IP : `172.16.0.0/24` (adresses attribuées dynamiquement aux VMs).
+  - Ce réseau utilise le NAT (Network Address Translation) pour fournir un accès internet aux VMs.  
+  > **Résultat ✅ :** Les VMs connectées à VMnet8 peuvent accéder à internet pour téléchargements et mises à jour. 
   ![VMnet8](./images/vmnet8.png)
 
 
@@ -32,8 +60,8 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - vCPU : 4
   - RAM : 12GB
   - Disque : 100GB
-  - NIC1 : Internal - Host-only (`10.7.0.10/24`)
-  - NIC2 : External - NAT/DHCP (temporaire)
+  - NIC1 : Host-only (`10.7.0.10/24`)
+  - NIC2 : NAT/DHCP (`172.16.0.x/24`) - temporaire
 
 
 
@@ -69,7 +97,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 
   **✅ Vérifications** :  
-  - `ip a` → confirme la présence des deux interfaces (`10.0.0.10` et `172.16.0.129`).
+  - `ip -br a` → confirme la présence des deux interfaces (`10.0.0.10` et `172.16.0.129`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.  
    ![splunk-verif](./images/splunk-verif.png)
 
@@ -78,24 +106,19 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 ---
 
-### 🖥️ SOC-W11 (Victime)
+### 🖥️ SOC-W11
   **Specs** : 
   - OS : 👉 [Microsoft Windows 11 ISO](https://www.microsoft.com/en-us/software-download/windows11?msockid=3093134cf4a46e83086606b8f5856f87)
   - vCPU : 2
   - RAM : 4GB
   - Disque : 60GB
-  - NIC1 : Internal - Host-only (`10.7.0.20/24`)
-  - NIC2 : External - NAT/DHCP (temporaire)
+  - NIC1 : Host-only (`10.7.0.20/24`)
+  - NIC2 : NAT/DHCP (`172.16.0.x/24`) - temporaire
 
-  **Configuration réseau** :
-  - Configuration de **eth0** – réseau interne (Host‑Only, adresse statique)
-     ``` 
-       Network Connections  
-         └─ Ethernet0  
-             └─ Properties 
-                 └─ Internet Protocol Version 4 (TCP/IPv4)  
-                    └─ ON
-      ``` 
+  **Configuration réseau** :  
+  - Configuration de **eth0** – réseau interne (Host‑Only, adresse statique)  
+      1. `Win + R` → taper `ncpa.cpl` → OK (ouvre directement Connexions réseau)
+      2. Ethernet → Propriétés → Internet Protocol Version 4 (TCP/IPv4)  
 
     ![w11-eth0](./images/w11-eth0.png)
 
@@ -118,14 +141,14 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 ---
 
-### 🖥️ SOC-ATK (Kali)
+### 🖥️ SOC-ATK
   **Specs** : 
   - OS : 👉 [Kali Linux ](https://www.kali.org/)
   - vCPU : 2
   - RAM : 4GB
   - Disque : 40GB
-  - NIC1 : Internal - Host-only (`10.7.0.30/24`)
-  - NIC2 : External - NAT/DHCP (temporaire)
+  - NIC1 : Host-only (`10.7.0.30/24`)
+  - NIC2 : NAT/DHCP (`172.16.0.x/24`) - temporaire
 
   **Configuration réseau (netplan)** :  
   - Interface **eth0** – réseau interne (Host‑Only, adresse statique)
@@ -151,7 +174,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     ![kali-cli-verif-1](./images/kali-cli-verif-1.png)    
     ![kali-cli-verif-2](./images/kali-cli-verif-2.png)     
 
-  - N.B : Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu.  
+  - N.B : Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu de la machine Windows.    
     ![win11-firewall-icmpv4](./images/win11-firewall-icmpv4.png)  
     - Une fois la règle activée, la commande `ping 10.7.0.20 -c 3` confirme la connectivité.  
 
@@ -168,8 +191,8 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - vCPU : 4
   - RAM : 8GB
   - Disque : 40GB
-  - NIC1 : Internal - Host-only (`10.7.0.40/24`)
-  - NIC2 : External - NAT/DHCP (temporaire)
+  - NIC1 : Host-only (`10.7.0.40/24`)
+  - NIC2 : NAT/DHCP (`172.16.0.x/24`) - temporaire
 
   **Configuration réseau** :
   - Configuration de **eth0/ens33** – réseau interne (Host‑Only, adresse statique)
@@ -187,7 +210,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 
   **✅ Vérifications** :  
-  - `ip -br a` → réduit br-uit et confirme la présence des deux interfaces  (`10.0.0.40` et `172.16.0.132`).
+  - `ip -br a` → confirme la présence des deux interfaces  (`10.0.0.40` et `172.16.0.132`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
   - `ping 10.7.0.[10-30] -c 3` → vérifie la connectivité avec les différentes VMs.
 
