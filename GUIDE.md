@@ -44,7 +44,7 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
     - Adresse IPv4 : `10.7.0.10`
     - DNS : `8.8.8.8`
         
-    > 💡 Pourquoi pas de Gateway? La switch interne ne fournit aucun routage extérieur. Si une passerelle était indiquée, Ubuntu tenterait d’envoyer tout le trafic non‑local vers un chemin inexistant, ce qui provoquerait des pertes de connectivité.
+    > 💡 Pourquoi pas de Gateway? La switch interne ne fournit aucun routage extérieur. Si une passerelle était indiquée, Ubuntu tenterait d’envoyer tout le trafic non‑local vers un chemin inexistant, ce qui provoquerait des pertes de connectivité.  
     ![splunk-ipv4-1](./images/splunk-ipv4-1.png)
 
   - Configuration de **eth1** (réseau externe/NAT) :
@@ -114,6 +114,8 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
    ![w11-verif-2](./images/w11-verif-2.png)
 
 
+> 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
+
 ---
 
 ### 🖥️ SOC-Kali (Attaquant)
@@ -154,8 +156,8 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
   **✅ Vérifications** :  
   - `ip a` → confirme la présence des deux interfaces (`10.0.0.30` et `172.16.0.131`).
-  - `ping 8.8.8.8 -n 3` → vérifie la connectivité Internet.
-  - `ping 10.7.0.10 -n 3` → vérifie la connectivité avec le serveur Splunk.
+  - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
+  - `ping 10.7.0.[10-20] -c 3` → vérifie la connectivité avec les différentes VMs.
 
     ![kali-verif-1](./images/kali-verif-1.png)    
     ![kali-verif-2](./images/kali-verif-2.png)     
@@ -167,6 +169,7 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
     ![kali-verif-3](./images/kali-verif-3.png)  
 
 
+> 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
 
   ---
 
@@ -181,9 +184,40 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
   - NIC1 : Internal - Host-only (`10.7.0.40/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations** :  
-  
+  **Configurations** :
+  - Configuration de **eth0/ens33** (réseau interne)
+    - Adresse IPv4 : `10.7.0.40`
+    - Netmask : `255.255.255.0`
+    - DNS : `8.8.8.8, 1.1.1.1`
+    
+    ![soc-eth0-1](./images/soc-eth0-1.png)
 
+
+  - Configuration de **eth1/ens34** (réseau externe/NAT) :
+    - Dans IPv4 : IPv4 Method = Automatic (DHCP).
+    - L’interface reçoit une IP dynamique (ex : `192.168.0.132`).
+
+
+
+  **✅ Vérifications** :  
+  - `ip -br a` → réduit bruit et confirme la présence des deux interfaces  (`10.0.0.40` et `172.16.0.132`).
+  - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
+  - `ping 10.7.0.[10-30] -c 3` → vérifie la connectivité avec les différentes VMs.
+
+    ![soc-verif-1](./images/soc-verif-1.png)    
+    ![soc-verif-2](./images/soc-verif-2.png)  
+
+> 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
+
+---
+
+## 📊 Tableau Récapitulatif
+| VM                | OS                   | eth0 (Host-only) | eth1 (NAT/DHCP) | Rôle            |
+| ----------------- | -------------------- | ---------------- | --------------- | --------------- |
+| SOC-Splunk-Server | Ubuntu Server 24.04  | 10.7.0.10/24     | DHCP            | Collecte & SIEM |
+| SOC-W11           | Windows 11           | 10.7.0.20/24     | DHCP            | Victime         |
+| SOC-Kali          | Kali Linux           | 10.7.0.30/24     | DHCP            | Attaquant       |
+| SOC-Workstation   | Ubuntu Desktop 24.04 | 10.7.0.40/24     | DHCP            | Analyste        |
 
 
 
