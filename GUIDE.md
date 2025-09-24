@@ -37,17 +37,17 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 
 
-  **Configurations** :  
+  **Configurations réseau** :
   - Choisir installation minimale pour garder contrôle sur les paquets installés.
   
-  - Configuration de **eth0** (réseau interne)
+  - Configuration de **eth0** – réseau interne (Host‑Only, adresse statique)
     - Adresse IPv4 : `10.7.0.10`
     - DNS : `8.8.8.8`
         
     > 💡 Pourquoi pas de Gateway? Le réseau host-only est non routé : indiquer une gateway pousserait tout le trafic non-local vers un chemin inexistant et provoquerait des pertes de connectivité.
     ![splunk-ipv4-1](./images/splunk-ipv4-1.png)
 
-  - Configuration de **eth1** (réseau externe/NAT) :
+  - Configuration de **eth1** – réseau externe (NAT, adresse dynamique via DHCP) :
     - Mode : DHCP automatique.
     - L’interface reçoit une IP dynamique (ex : `172.16.0.129`).
         
@@ -94,8 +94,8 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.20/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations** :  
-  - Configuration de **eth0** (réseau interne)
+  **Configurations réseau** :
+  - Configuration de **eth0** – réseau interne (Host‑Only, adresse statique)
      ``` 
        Network Connections  
          └─ Ethernet0  
@@ -106,7 +106,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
     ![w11-eth0](./images/w11-eth0.png)
 
-  - Configuration de **eth1** (réseau externe/NAT) :
+  - Configuration de **eth1** – réseau externe (NAT, adresse dynamique via DHCP) :
     - Mode : DHCP automatique.
     - L’interface reçoit une IP dynamique (ex : `172.16.0.130`).
 
@@ -134,46 +134,32 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.30/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations** :  
-  - Ajout des connexions (à répéter pour eth0 et eth1)
-     ``` 
-       Advanced Network Configuration  
-         └─ +
-             └─ Device 
-                 └─ eth0 
-                    └─ IPv4 Settings
-                       └─ Add
-                         └─ Ajouter informations spécifiques
-     ``` 
+  **Configurations réseau** :  
+  - Interface **eth0** – réseau interne (Host‑Only, adresse statique)
+    ```bash
+    sudo nmcli con add type ethernet ifname eth0 con-name eth0-static ipv4.addresses 10.7.0.30/24 ipv4.dns "8.8.8.8 1.1.1.1" ipv4.method manual
+    sudo nmcli con up eth0-static
+    ```
 
-  - Configuration de **eth0** (réseau interne)
-    - Adresse IPv4 : `10.7.0.30`
-    - Netmask : `255.255.255.0`
-    - DNS : `8.8.8.8, 1.1.1.1`
-    
-    ![kali-eth0-1](./images/kali-eth0-1.png)
-    ![kali-eth0-2](./images/kali-eth0-2.png)
+  - Interface **eth1** – réseau externe (NAT, adresse dynamique via DHCP)
+    ```bash
+    sudo nmcli con add type ethernet ifname eth1 con-name eth1-dhcp ipv4.method auto
+    sudo nmcli con up eth1-dhcp
+    ```
 
-    
-  - Configuration de **eth1** (réseau externe/NAT) :
-    - Dans IPv4 Settings : Method = Automatic (DHCP).
-    - L’interface reçoit une IP dynamique (ex : `172.16.0.131`).
-
-    ![kali-eth1](./images/kali-eth1.png)
+    > 💡 Remarque : selon la version de Kali, les interfaces peuvent être renommées (ex : ens33, ens34, etc.).    
+    >  Identifiez les noms exacts avec la commande `ip -br a` et adaptez les paramètres `ifname` en conséquence.  
 
   **✅ Vérifications** :  
   - `ip a` → confirme la présence des deux interfaces (`10.0.0.30` et `172.16.0.131`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
   - `ping 10.7.0.[10-20] -c 3` → vérifie la connectivité avec les différentes VMs.
-
-    ![kali-verif-1](./images/kali-verif-1.png)    
-    ![kali-verif-2](./images/kali-verif-2.png)     
-  
-  - Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu.
-    ![w11-firewall-icmpv4](./images/w11-firewall-icmpv4.png)  
+  - N.B : Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu.  
+    ![win11-firewall-icmpv4](./images/win11-firewall-icmpv4.png)  
     - Une fois la règle activée, la commande `ping 10.7.0.20 -n 3` confirme la connectivité.  
-
-    ![kali-verif-3](./images/kali-verif-3.png)  
+    ![kali-cli-verif-1](./images/kali-cli-verif-1.png)    
+    ![kali-cli-verif-2](./images/kali-cli-verif-2.png)     
+    ![kali-cli-verif-3](./images/kali-cli-verif-3.png)  
 
 
 > 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
@@ -191,8 +177,8 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.40/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations** :
-  - Configuration de **eth0/ens33** (réseau interne)
+  **Configurations réseau** :
+  - Configuration de **eth0/ens33** – réseau interne (Host‑Only, adresse statique)
     - Adresse IPv4 : `10.7.0.40`
     - Netmask : `255.255.255.0`
     - DNS : `8.8.8.8, 1.1.1.1`
@@ -200,7 +186,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     ![soc-eth0-1](./images/soc-eth0-1.png)
 
 
-  - Configuration de **eth1/ens34** (réseau externe/NAT) :
+  - Configuration de **eth1/ens34** – réseau externe (NAT, adresse dynamique via DHCP) :
     - Dans IPv4 : IPv4 Method = Automatic (DHCP).
     - L’interface reçoit une IP dynamique (ex : `172.16.0.132`).
 
