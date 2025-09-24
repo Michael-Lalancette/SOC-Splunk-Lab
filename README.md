@@ -92,7 +92,7 @@ Le laboratoire est idéal pour :
 </details>
 
 
-➡️ **Guide des phases détaillées** : [👉](soc-splunk-lab/DOC.md)
+➡️ **Guide des phases détaillées** : [👉](soc-splunk-lab/GUIDE.md)
 
 ---
 
