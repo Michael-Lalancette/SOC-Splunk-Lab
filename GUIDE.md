@@ -177,7 +177,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     - Netmask : `255.255.255.0`
     - DNS : `8.8.8.8, 1.1.1.1`
     
-    ![soc-eth0-1](./images/soc-eth0-1.png)
+    ![soc-eth0](./images/soc-eth0.png)
 
 
   - Configuration de **eth1/ens34** – réseau externe (NAT, adresse dynamique via DHCP) :
