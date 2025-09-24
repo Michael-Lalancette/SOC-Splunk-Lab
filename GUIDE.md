@@ -11,6 +11,8 @@
   - [SOC-Workstation](#️-soc-workstation)
 
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
+  
+  
 - [Phase 4 — Configuration des Forwarders & Logs](#phase-4---configuration-des-forwarders--logs)
 - [Phase 5 — Détection & Alerting](#phase-5---détection--alerting)
 - [Phase 6 — Investigation & Workflows](#phase-6---investigation--workflows)
@@ -102,7 +104,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
    ![splunk-verif](./images/splunk-verif.png)
 
 
-> 💡 Prendre un snapshot de la VM juste avant d’installer Splunk, afin de pouvoir revenir rapidement en cas de problème.
+> ⚠️ Prendre un snapshot de la VM juste avant d’installer Splunk, afin de pouvoir revenir rapidement en cas de problème.
 
 ---
 
@@ -137,7 +139,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
    ![w11-verif-2](./images/w11-verif-2.png)
 
 
-> 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
+> ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
 
 ---
 
@@ -179,7 +181,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     - Une fois la règle activée, la commande `ping 10.7.0.20 -c 3` confirme la connectivité.  
 
 
-> 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
+> ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
 
   ---
 
@@ -217,7 +219,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     ![soc-verif-1](./images/soc-verif-1.png)    
     ![soc-verif-2](./images/soc-verif-2.png)  
 
-> 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
+> ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
 
 ---
 
@@ -229,6 +231,97 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 | SOC-Kali          | Kali Linux           | 10.7.0.30/24     | DHCP            | Attaquant       |
 | SOC-Workstation   | Ubuntu Desktop 24.04 | 10.7.0.40/24     | DHCP            | Analyste        |
 
+
+
+---
+
+## Phase 3 - Installation de Splunk Enterprise
+
+### 🎯 Objectif  
+Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, configurer l’autostart et valider l’accès au tableau de bord depuis la station analyste.
+
+
+
+
+### 1. Téléchargement de Splunk Enterprise  
+  - Naviguer sur la page [Splunk Enterprise](https://www.splunk.com/en_us/download/splunk-enterprise.html).  
+  - Créer un compte Splunk et choisir l’installateur Linux `.deb`.  
+  - Copier le lien `wget` fourni par Splunk (option Copy wget link).  
+> 💡 Cette URL sera utilisée plus tard avec `wget`depuis le serveur Ubuntu.  
+    ![splunk-download](./images/splunk-download.png) 
+
+
+
+
+### 2. Connexion SSH 
+  - Depuis le poste SOC-Workstation (Ubuntu Desktop), se connecter sur le serveur Ubuntu via SSH :  
+    ```bash
+    ssh splunk-admin@10.7.0.10
+    ```
+    ![ssh](./images/ssh.png)  
+
+
+
+
+### 3. Récupération et installation
+  - Récupérer le fichier `.deb` avec `wget` :  
+    ```bash
+    wget -O splunk.deb "<URL_copiée_avec_wget>"
+    ```  
+    ![splunk-download-2](./images/splunk-download-2.png)
+      
+    > N.B. : `-O` nomme spécifiquement le fichier `splunk.deb` au lieu du long nom par défaut.
+
+  - Installer le paquet Splunk :  
+    ```bash
+    sudo dpkg -i splunk.deb
+    ```  
+  - Lancer Splunk et accepter la license :
+    ```bash
+    sudo /opt/splunk/bin/splunk start --accept-license
+    ```  
+  - Créer le compte admin (`splunk-admin`) et lui associer un mot de passe approprié.
+    > 💡 Ce sera vos credentials pour vous connecter via l'interface.  
+  - L'URL d'accès est indiquée à la fin du téléchargement : `http://10.7.0.10:8000`  
+
+  - Pour faire démarrer automatiquement Splunk au boot :
+    ```bash
+    sudo /opt/splunk/bin/splunk enable boot-start
+    ```
+  - Vérifier finalement que le service est up and running :
+    ```bash
+    sudo /opt/splunk/bin/splunk status
+    ```  
+    > **Résultat ✅ :** `splunkd` en cours d’exécution (PID xxxx) et tous les helpers actifs.  
+
+
+
+
+### 4. Accès au Splunk Dashboard
+  - Sur la VM SOC‑Workstation :  
+    - Ouvrir Firefox.  
+    - Saisir `http://10.7.0.10:8000`.  
+    - La page de connexion Splunk s’affiche.
+    ![splunk-dash-1](./images/splunk-dash-1.png)  
+    - Se connecter avec les identifiants créés précédemment.  
+  > **Résultat ✅ :** Le tableau de bord Splunk Enterprise apparaît, confirmant que le serveur est fonctionnel et joignable depuis le réseau interne.  
+    ![splunk-dash-2](./images/splunk-dash-2.png)  
+
+
+
+
+### 📌 Bilan
+  - Splunk installé, démarrage automatique configuré, service actif sur le port `8000`.  
+  - Interface web accessible depuis la station analyste.  
+  - Prêt pour la phase suivante : configuration des inputs, forwarders et premières recherches.   
+
+
+
+> ⚠️ Snapshot : prenez un snapshot de la VM SOC‑Splunk‑Server avant de poursuivre avec la configuration des inputs.
+
+
+
+---
 
 
 
