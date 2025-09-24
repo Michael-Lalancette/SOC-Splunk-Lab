@@ -1,20 +1,20 @@
 ## Phase 1 - Réseaux virtuels
 
 ### 🎯 Objectif
-Définir 2 réseaux virtuels sous VMware : un réseau **isolé** pour la communication interne du laboratoire et un réseau **NAT** permettant un accès Internet temporaire afin d’installer les outils/updates nécessaires..
+Définir 2 réseaux virtuels sous VMware : un réseau **isolé** pour la communication interne (Host-Only) du laboratoire et un réseau externe (NAT) permettant un accès internet temporaire afin d’installer les outils/mises à jour nécessaires.
 
 ### VMnet1 (Host-Only)
   - Créer/configurer un réseau Host-Only dédié.  
-  - Désactivez le DHCP.  
+  - Désactiver le DHCP.  
   -  IP statiques seront attribuées dans le subnet `10.7.0.0/24`.  
-  > **Résultat ✅ :** Les VM connectées à ce réseau ne voient que les autres VM du même réseau (aucune sortie vers Internet).  
+  > **Résultat ✅ :** Les VM connectées à ce réseau ne voient que les autres VM du même réseau (aucune sortie vers internet).  
   ![VMnet1](./images/vmnet1.png)
 
 
 ### VMnet8 (NAT/DHCP)
   - Activé par défaut.  
   - Laisser DHCP activé.  
-  > **Résultat ✅ :** Les VM rattachées à ce réseau obtiennent une adresse IP via DHCP et peuvent accéder à Internet pour télécharger les outils et effectuer les updates nécessaires.  
+  > **Résultat ✅ :** Les VM rattachées à ce réseau obtiennent une adresse IP dynamique via DHCP et peuvent accéder à internet pour télécharger les outils et effectuer les updates nécessaires.  
   ![VMnet8](./images/vmnet8.png)
 
 
@@ -37,7 +37,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 
 
-  **Configurations réseau** :
+  **Configuration réseau** :
   - Choisir installation minimale pour garder contrôle sur les paquets installés.
   
   - Configuration de **eth0** – réseau interne (Host‑Only, adresse statique)
@@ -54,23 +54,16 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     > 💡 Fournit accès Internet (mises à jour + téléchargement de Splunk).  
     ![splunk-dhcp-1](./images/splunk-dhcp-1.png)
 
-  - Après le reboot de la machine, installer paquets nécessaires :
-    ```bash
-    sudo apt update
-    sudo apt install -y openssh-server iputils-ping curl net-tools
-    sudo systemctl enable --now ssh
-    ```
-
-  - Activer et démarrer le service SSH au boot :
+  - Après le reboot de la machine, installer paquets essentiels et activer SSH :
       ```bash
-      # Installer
+      # Installer paquets
       sudo apt update
-      sudo apt install -y openssh-server
-    
-      # Activer/démarrer au boot
+      sudo apt install -y openssh-server iputils-ping curl net-tools
+
+      # Activer/démarrer SSH au boot
       sudo systemctl enable --now ssh
 
-      # Valider/vérifier le service
+      # Vérifier SSH
       systemctl status ssh
       ```
 
@@ -94,7 +87,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.20/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations réseau** :
+  **Configuration réseau** :
   - Configuration de **eth0** – réseau interne (Host‑Only, adresse statique)
      ``` 
        Network Connections  
@@ -134,7 +127,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.30/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations réseau (via CLI)** :  
+  **Configuration réseau (netplan)** :  
   - Interface **eth0** – réseau interne (Host‑Only, adresse statique)
     ```bash
     sudo nmcli con add type ethernet ifname eth0 con-name eth0-static ipv4.addresses 10.7.0.30/24 ipv4.dns "8.8.8.8 1.1.1.1" ipv4.method manual
@@ -152,7 +145,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     >  Identifiez les noms exacts avec la commande `ip -br a` et adaptez les paramètres `ifname` en conséquence.  
 
   **✅ Vérifications** :  
-  - `ip a` → confirme la présence des deux interfaces (`10.0.0.30` et `172.16.0.131`).
+  - `ip -br a` → confirme la présence des deux interfaces (`10.0.0.30` et `172.16.0.131`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
   - `ping 10.7.0.[10-20] -c 3` → vérifie la connectivité avec les différentes VMs.
     ![kali-cli-verif-1](./images/kali-cli-verif-1.png)    
@@ -178,7 +171,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.40/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations réseau** :
+  **Configuration réseau** :
   - Configuration de **eth0/ens33** – réseau interne (Host‑Only, adresse statique)
     - Adresse IPv4 : `10.7.0.40`
     - Netmask : `255.255.255.0`
