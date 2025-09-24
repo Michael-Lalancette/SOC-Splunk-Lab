@@ -146,6 +146,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     sudo nmcli con add type ethernet ifname eth1 con-name eth1-dhcp ipv4.method auto
     sudo nmcli con up eth1-dhcp
     ```
+    ![kali-cli-eth](./images/kali-cli-eth.png)   
 
     > 💡 Remarque : selon la version de Kali, les interfaces peuvent être renommées (ex : ens33, ens34, etc.).    
     >  Identifiez les noms exacts avec la commande `ip -br a` et adaptez les paramètres `ifname` en conséquence.  
@@ -154,12 +155,12 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - `ip a` → confirme la présence des deux interfaces (`10.0.0.30` et `172.16.0.131`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
   - `ping 10.7.0.[10-20] -c 3` → vérifie la connectivité avec les différentes VMs.
-  - N.B : Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu.  
-    ![win11-firewall-icmpv4](./images/win11-firewall-icmpv4.png)  
-    - Une fois la règle activée, la commande `ping 10.7.0.20 -n 3` confirme la connectivité.  
     ![kali-cli-verif-1](./images/kali-cli-verif-1.png)    
     ![kali-cli-verif-2](./images/kali-cli-verif-2.png)     
-    ![kali-cli-verif-3](./images/kali-cli-verif-3.png)  
+
+  - N.B : Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu.  
+    ![win11-firewall-icmpv4](./images/win11-firewall-icmpv4.png)  
+    - Une fois la règle activée, la commande `ping 10.7.0.20 -c 3` confirme la connectivité.  
 
 
 > 💡 Prendre un snapshot "clean" de la VM en cas d'incident.
