@@ -65,7 +65,7 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
 
   **✅ Vérifications** :  
-  - `ip a` → confirme la présence des deux interfaces (10.0.0.10 et 192.168.0.192).
+  - `ip a` → confirme la présence des deux interfaces (`10.0.0.10` et `172.16.0.129`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.  
    ![splunk-verif](./images/splunk-verif.png)
 
@@ -76,6 +76,7 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
 > 💡 Prendre un snapshot de la VM juste avant d’installer Splunk, afin de pouvoir revenir rapidement en cas de problème.
 
+---
 
 ### 🖥️ SOC-W11 (Victime)
   **Specs** : 
@@ -106,11 +107,82 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
 
   **✅ Vérifications** :  
-  - `ipconfig` → confirme la présence des deux interfaces (10.0.0.10 et 192.168.0.192).
+  - `ipconfig` → confirme la présence des deux interfaces (`10.0.0.20` et `172.16.0.130`).
   - `ping 8.8.8.8 -n 3` → vérifie la connectivité Internet.
   - `ping 10.7.0.10 -n 3` → vérifie la connectivité avec le serveur Splunk.  
    ![w11-verif-1](./images/w11-verif-1.png)  
    ![w11-verif-2](./images/w11-verif-2.png)
+
+
+---
+
+### 🖥️ SOC-Kali (Attaquant)
+  **Specs** : 
+  - OS : 👉 [Kali Linux ](https://www.kali.org/)
+  - vCPU : 2
+  - RAM : 4GB
+  - Disque : 40GB
+  - NIC1 : Internal - Host-only (`10.7.0.30/24`)
+  - NIC2 : External - NAT/DHCP (temporaire)
+
+  **Configurations** :  
+  - Ajout des connexions (à répéter pour eth0 et eth1)
+     ``` 
+       Advanced Network Configuration  
+         └─ +
+             └─ Device 
+                 └─ eth0 
+                    └─ IPv4 Settings
+                       └─ Add
+                         └─ Ajouter informations spécifiques
+     ``` 
+
+  - Configuration de **eth0** (réseau interne)
+    - Adresse IPv4 : `10.7.0.30`
+    - Netmask : `255.255.255.0`
+    - DNS : `8.8.8.8, 1.1.1.1`
+    
+    ![kali-eth0-1](./images/kali-eth0-1.png)
+    ![kali-eth0-2](./images/kali-eth0-2.png)
+
+    
+  - Configuration de **eth1** (réseau externe/NAT) :
+    - Dans IPv4 Settings : Method = Automatic (DHCP).
+    - L’interface reçoit une IP dynamique (ex : `192.168.0.131`).
+
+    ![kali-eth1](./images/kali-eth1.png)
+
+  **✅ Vérifications** :  
+  - `ip a` → confirme la présence des deux interfaces (`10.0.0.30` et `172.16.0.131`).
+  - `ping 8.8.8.8 -n 3` → vérifie la connectivité Internet.
+  - `ping 10.7.0.10 -n 3` → vérifie la connectivité avec le serveur Splunk.
+
+    ![kali-verif-1](./images/kali-verif-1.png)    
+    ![kali-verif-2](./images/kali-verif-2.png)     
+  
+  - Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu.
+    ![w11-firewall-icmpv4](./images/w11-firewall-icmpv4.png)  
+    - Une fois la règle activée, la commande `ping 10.7.0.20 -n 3` confirme la connectivité.  
+
+    ![kali-verif-3](./images/kali-verif-3.png)  
+
+
+
+  ---
+
+
+
+### 🖥️ SOC-Workstation
+  **Specs** : 
+  - OS : 👉 [Ubuntu Desktop 24.04.3 LTS](https://ubuntu.com/download/desktop)
+  - vCPU : 4
+  - RAM : 8GB
+  - Disque : 40GB
+  - NIC1 : Internal - Host-only (`10.7.0.40/24`)
+  - NIC2 : External - NAT/DHCP (temporaire)
+
+  **Configurations** :  
+  
 
 
 
