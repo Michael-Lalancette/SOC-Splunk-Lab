@@ -14,7 +14,7 @@ Définir 2 réseaux virtuels sous VMware : un réseau **isolé** pour la commu
 ### VMnet8 (NAT/DHCP)
   - Activé par défaut.  
   - Laisser DHCP activé.  
-  > **Résultat ✅ :** Les VM rattachées à ce réseau obtiennent une adresse IP via DHCP et peuvent accéder à Internet pour télécharger les outils et effectuer les updates.  
+  > **Résultat ✅ :** Les VM rattachées à ce réseau obtiennent une adresse IP via DHCP et peuvent accéder à Internet pour télécharger les outils et effectuer les updates nécessaires.  
   ![VMnet8](./images/vmnet8.png)
 
 
@@ -23,7 +23,7 @@ Définir 2 réseaux virtuels sous VMware : un réseau **isolé** pour la commu
 ## Phase 2 - Configuration des VMs
 
 ### 🎯 Objectif
-Déployer les VM du laboratoire, configurer leurs ressources matérielles et leurs interfaces réseau, puis installer les paquets de base nécessaires à leur bon fonctionnement.
+Déployer et préparer les machines virtuelles du laboratoire : définir les ressources, configurer les interfaces réseau, installer les paquets de base, et effectuer des vérifications simples avant la phase d’application.
 
 
 ### 🖥️ SOC-Splunk-Server
@@ -38,30 +38,41 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
 
   **Configurations** :  
-  - Choisir installation minimale pour un maximum de contrôle.
+  - Choisir installation minimale pour garder contrôle sur les paquets installés.
   
   - Configuration de **eth0** (réseau interne)
     - Adresse IPv4 : `10.7.0.10`
     - DNS : `8.8.8.8`
         
-    > 💡 Pourquoi pas de Gateway? La switch interne ne fournit aucun routage extérieur. Si une passerelle était indiquée, Ubuntu tenterait d’envoyer tout le trafic non‑local vers un chemin inexistant, ce qui provoquerait des pertes de connectivité.  
+    > 💡 Pourquoi pas de Gateway? Le réseau host-only est non routé : indiquer une gateway pousserait tout le trafic non-local vers un chemin inexistant et provoquerait des pertes de connectivité.
     ![splunk-ipv4-1](./images/splunk-ipv4-1.png)
 
   - Configuration de **eth1** (réseau externe/NAT) :
     - Mode : DHCP automatique.
-    - L’interface reçoit une IP dynamique (ex : `192.168.0.129`).
+    - L’interface reçoit une IP dynamique (ex : `172.16.0.129`).
         
     > 💡 Fournit accès Internet (mises à jour + téléchargement de Splunk).  
     ![splunk-dhcp-1](./images/splunk-dhcp-1.png)
 
   - Après le reboot de la machine, installer paquets nécessaires :
     ```bash
-    sudo apt update && sudo apt install -y openssh-server iputils-ping curl
+    sudo apt update
+    sudo apt install -y openssh-server iputils-ping curl net-tools
+    sudo systemctl enable --now ssh
     ```
-      Ces paquets offrent :
-    - `openssh-server` – accès SSH.
-    - `iputils-ping` – outil de diagnostic réseau.  
-    - `curl` – téléchargement de fichiers (utile pour récupérer le paquet Splunk).  
+
+  - Activer et démarrer le service SSH au boot :
+      ```bash
+      # Installer
+      sudo apt update
+      sudo apt install -y openssh-server
+    
+      # Activer/démarrer au boot
+      sudo systemctl enable --now ssh
+
+      # Valider/vérifier le service
+      systemctl status ssh
+      ```
 
 
   **✅ Vérifications** :  
@@ -69,10 +80,6 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.  
    ![splunk-verif](./images/splunk-verif.png)
 
-
-  🚀 **Prochaine étape – Phase 3 : Installation de Splunk Enterprise**  
-  - Ton `SOC-Splunk-Server` est maintenant prêt.
-  - La prochaine phase consistera à déployer Splunk Enterprise sur Ubuntu, ouvrir les ports nécessaires, et préparer les premiers indexes pour accueillir les journaux Windows et Sysmon.    
 
 > 💡 Prendre un snapshot de la VM juste avant d’installer Splunk, afin de pouvoir revenir rapidement en cas de problème.
 
@@ -101,7 +108,7 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
   - Configuration de **eth1** (réseau externe/NAT) :
     - Mode : DHCP automatique.
-    - L’interface reçoit une IP dynamique (ex : `192.168.0.130`).
+    - L’interface reçoit une IP dynamique (ex : `172.16.0.130`).
 
     ![w11-eth1](./images/w11-eth1.png)
 
@@ -150,7 +157,7 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
     
   - Configuration de **eth1** (réseau externe/NAT) :
     - Dans IPv4 Settings : Method = Automatic (DHCP).
-    - L’interface reçoit une IP dynamique (ex : `192.168.0.131`).
+    - L’interface reçoit une IP dynamique (ex : `172.16.0.131`).
 
     ![kali-eth1](./images/kali-eth1.png)
 
@@ -195,12 +202,12 @@ Déployer les VM du laboratoire, configurer leurs ressources matérielles et leu
 
   - Configuration de **eth1/ens34** (réseau externe/NAT) :
     - Dans IPv4 : IPv4 Method = Automatic (DHCP).
-    - L’interface reçoit une IP dynamique (ex : `192.168.0.132`).
+    - L’interface reçoit une IP dynamique (ex : `172.16.0.132`).
 
 
 
   **✅ Vérifications** :  
-  - `ip -br a` → réduit bruit et confirme la présence des deux interfaces  (`10.0.0.40` et `172.16.0.132`).
+  - `ip -br a` → réduit br-uit et confirme la présence des deux interfaces  (`10.0.0.40` et `172.16.0.132`).
   - `ping 8.8.8.8 -c 3` → vérifie la connectivité Internet.
   - `ping 10.7.0.[10-30] -c 3` → vérifie la connectivité avec les différentes VMs.
 
