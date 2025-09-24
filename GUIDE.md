@@ -134,7 +134,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - NIC1 : Internal - Host-only (`10.7.0.30/24`)
   - NIC2 : External - NAT/DHCP (temporaire)
 
-  **Configurations réseau** :  
+  **Configurations réseau (via CLI)** :  
   - Interface **eth0** – réseau interne (Host‑Only, adresse statique)
     ```bash
     sudo nmcli con add type ethernet ifname eth0 con-name eth0-static ipv4.addresses 10.7.0.30/24 ipv4.dns "8.8.8.8 1.1.1.1" ipv4.method manual
