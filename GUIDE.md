@@ -12,7 +12,7 @@
 
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
 
-- [Phase 4 - Déploiement du Universal Forwarder (SOC-W11)](#phase-4---deploiement-du-universal-forwarder-soc-w11)
+- [Phase 4 - Déploiement du Universal Forwarder (SOC-W11)](#phase-4---deploiement-du-universal-forwarder-soc-w11)  
 
 - [Phase 5 — Détection & Alerting](#phase-5---détection--alerting)
 - [Phase 6 — Investigation & Workflows](#phase-6---investigation--workflows)
