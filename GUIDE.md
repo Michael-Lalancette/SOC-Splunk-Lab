@@ -11,9 +11,9 @@
   - [SOC-Workstation](#️-soc-workstation)
 
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
-  
-  
-- [Phase 4 — Configuration des Forwarders & Logs](#phase-4---configuration-des-forwarders--logs)
+
+- [Phase 4 - Déploiement du Universal Forwarder (SOC-W11)](#phase-4---deploiement-du-universal-forwarder-soc-w11)
+
 - [Phase 5 — Détection & Alerting](#phase-5---détection--alerting)
 - [Phase 6 — Investigation & Workflows](#phase-6---investigation--workflows)
 
@@ -246,7 +246,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 ### 1. Téléchargement de Splunk Enterprise  
   - Naviguer sur la page [Splunk Enterprise](https://www.splunk.com/en_us/download/splunk-enterprise.html).  
   - Créer un compte Splunk et choisir l’installateur Linux `.deb`.  
-  - Copier le lien `wget` fourni par Splunk (option Copy wget link).  
+  - Copier le lien `wget` fourni par Splunk.  
 > 💡 Cette URL sera utilisée plus tard avec `wget`depuis le serveur Ubuntu.  
     ![splunk-download](./images/splunk-download.png) 
 
@@ -254,7 +254,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 ### 2. Connexion SSH 
-  - Depuis le poste SOC-Workstation (Ubuntu Desktop), se connecter sur le serveur Ubuntu via SSH :  
+  - Depuis la VM SOC-Workstation (Ubuntu Desktop), se connecter sur le serveur Ubuntu via SSH :  
     ```bash
     ssh splunk-admin@10.7.0.10
     ```
@@ -270,7 +270,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
     ```  
     ![splunk-download-2](./images/splunk-download-2.png)
       
-    > N.B. : `-O` nomme spécifiquement le fichier `splunk.deb` au lieu du long nom par défaut.
+    > N.B. : `-O` nomme spécifiquement le fichier `splunk.deb` (beaucoup mieux que le long string par défaut).
 
   - Installer le paquet Splunk :  
     ```bash
@@ -281,7 +281,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
     sudo /opt/splunk/bin/splunk start --accept-license
     ```  
   - Créer le compte admin (`splunk-admin`) et lui associer un mot de passe approprié.
-    > 💡 Ce sera vos credentials pour vous connecter via l'interface.  
+    > 💡 Futurs credentials pour vous connecter via l'interface web.  
   - L'URL d'accès est indiquée à la fin du téléchargement : `http://10.7.0.10:8000`  
 
   - Pour faire démarrer automatiquement Splunk au boot :
@@ -317,17 +317,17 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
-> ⚠️ Snapshot : prenez un snapshot de la VM SOC‑Splunk‑Server avant de poursuivre avec la configuration des inputs.  
+> ⚠️ Snapshot : prenez un snapshot de la VM SOC‑Splunk‑Server avant de poursuivre.
 
 
 
 ---
 
-## Phase 5 - Déploiement du Universal Forwarder (SOC-W11)
+## Phase 4 - Déploiement du Universal Forwarder (SOC-W11)
 
 
 ### 🎯 Objectif
-Installer et configurer le **Splunk Universal Forwarder** sur la VM victime Windows (SOC-W11), lui indiquer l’indexer (`10.0.0.10:9997`), définir les sources d’événements (Security, System, Application) et valider l’ingestion des événements dans l’index `win_logs`.  
+Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC-W11), lui indiquer l’indexer (`10.0.0.10:9997`), définir les sources d’événements (Security, System, Application) et valider l’ingestion des événements dans l’index `win_logs`.  
 
 
 ### 1. Téléchargement du Forwarder
@@ -348,35 +348,34 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime Wind
   - Ignorer la configuration du Deployment Server (non utilisée dans ce lab).  
   - Lors de la configuration de l’**Indexer**, définir :  
     - Host/IP : `10.0.0.10`  
-    - Port : `9997`  
-      → L’assistant génère automatiquement un fichier `outputs.conf`.   
+    - Port : `9997`     
     ![uf-download-2](./images/uf-download-2.png)    
-
+    > ✅ Cette étape génère automatiquement un fichier `outputs.conf`.  
 
 
 
 
 ### 3. Activation du port de réception sur l’indexer
   - Même si l’IP de l’indexer (`10.7.0.10`) et le port de transmission (`9997`) ont été définis lors de l’installation du UF, l'**indexer** doit explicitement être configuré pour écouter sur ce port.     
-    - Le **Forwarder** n’indique que *où envoyer* les journaux (`outputs.conf`).  
-    - L’**Indexer** doit, lui, être configuré pour *écouter* sur le port correspondant, faute de quoi les événements seront rejetés.  
+    - Le Forwarder définit uniquement la destination des journaux (`outputs.conf`).  
+    - L’Indexer doit, quant à lui, être configuré pour accepter les flux entrants sur ce port, sans quoi les événements seront ignorés.
 
   - Depuis l’interface Splunk (`http://10.7.0.10:8000`) :  
-    1. Aller dans **Settings ➝ Forwarding and Receiving**.  
+    1. Accéder à **Settings ➝ Forwarding and Receiving**.  
     2. Dans **Receive data**, cliquer sur **Configure receiving**.  
-    3. Cliquer sur **New Receiving Port** et ajouter le port `9997`.  
+    3. Sélectionner **New Receiving Port** et ajouter le port `9997`.  
     4. Sauvegarder la configuration.    
     ![uf-port](./images/uf-port.png)   
 
 
-  > 💡 On peut vérifier côté serveur avec :  
+  > 💡 Vérification côté serveur :  
   > ```bash
   > sudo ss -tulnp | grep 9997
   > ```  
   > Le processus `splunkd` doit apparaître en écoute sur TCP/9997.  
 
 
-**Résultat ✅ :** Le Splunk indexer est désormais prêt à recevoir les logs envoyés par les UF sur le port `9997`, assurant ainsi la continuité du pipeline de collecte.  
+**Résultat ✅ :** L’indexer est désormais configuré pour recevoir les logs transmis par les UF sur le port 9997, garantissant la continuité du pipeline de collecte.
 
 
 
@@ -384,17 +383,15 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime Wind
 
 
 ### 4. Définition des sources de logs via `inputs.conf`  
-  - Une fois le forwarder relié à l’indexer (`outputs.conf`), il faut définir quels logs Windows collecter.  
-  - Cela se fait dans le fichier `inputs.conf`, localisé dans :  
+  - Après avoir relié le UF à l’indexer (`outputs.conf`), définir quels logs Windows seront collectés.  
+  - Cela se fait par l'entremise du fichier de configuration `inputs.conf`, localisé dans :  
      `C:\Program Files\SplunkUniversalForwarder\etc\system\local`  
       - `outputs.conf` → indique **destination** (où envoyer) les données (`10.7.0.10:9997`).  
       - `inputs.conf` → indique **sources** à collecter (ex : logs Windows).  
       ![uf-config-1](./images/uf-config-1.png)  
 
 
-
-
-  - D’après la [documentation officielle](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf), dans un environnement **sans Deployment Server** (comme dans ce lab), il est nécessaire de créer et éditer manuellement le fichier `inputs.conf` :  
+  - Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf), dans un environnement **sans Deployment Server** (comme dans ce lab), il est nécessaire de créer et éditer manuellement le fichier `inputs.conf` :  
     - Je l'ai donc créer manuellement avec **Notepad**, puis ajouté les **stanzas** suivants :  
       ```ini
        [WinEventLog://Security]
@@ -410,18 +407,17 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime Wind
        index = win_logs
        ``` 
       ![uf-config-2](./images/uf-config-2.png)  
-    > 💡 Ces stanzas permettent de collecter les trois canaux de logs Windows les plus critiques (Sécurité, Système et Application) et les centralisent vers l'index `win_logs`.    
+    > 💡 Ces stanzas activent la collecte des trois canaux de logs Windows les plus critiques (Sécurité, Système et Application) et les centralisent vers l'index `win_logs`.    
 
 
-  - Après enregistrement, le forwarder contient désormais :  
+  - Après enregistrement, le UF contient désormais :  
     - `outputs.conf` → destination (`10.7.0.10:9997`)  
     - `inputs.conf` → sources de logs à collecter  
       ![uf-config-3](./images/uf-config-3.png)
 
  
   - Appliquer/valider la configuration
-    - Se positionner dans le répertoire suivant : `C:\Program Files\SplunkUniversalForwarder\bin`  
-
+    - Se positionner dans le répertoire `C:\Program Files\SplunkUniversalForwarder\bin`  
     - Redémarrer et vérifier l'état du service :   
       ```powershell
       .\splunk restart
@@ -431,15 +427,14 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime Wind
 
 
 **Résultat ✅ :** Le service SplunkForwarder redémarre correctement.  
-  - `splunk status` → renvoie `SplunkForwarder: Running`, confirmant que le daemon `splunkd` tourne en arrière-plan et que les journaux sont prêts à être envoyés à l’indexer (`10.7.0.10`).  
+  - `splunk status` → renvoie `SplunkForwarder: Running`, confirmant que le daemon `splunkd` tourne en arrière-plan et que les logs sont prêts à être envoyés à l’indexer (`10.7.0.10`).  
 
 
   
 
 
-### 5. Création de l'index `win_logs`
-  - Création de l’index dans Splunk Web  
-    - Retour sur notre interface Splunk (`http://10.7.0.10:8000`)  
+### 5. Création de l'index `win_logs` 
+  - Retour sur notre interface Splunk (`http://10.7.0.10:8000`)  
     - Aller dans Settings ➝ Indexes  
     - Cliquer sur New Index et configurer :  
       - Index Name : `win_logs`  
