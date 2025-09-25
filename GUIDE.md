@@ -12,15 +12,9 @@
 
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
 
-- [Phase 4 — Déploiement du Universal Forwarder (SOC-W11)](#phase-4---deploiement-du-universal-forwarder-soc-w11)  
-
-- [Phase 5 — Détection & Alerting](#phase-5---détection--alerting)
-- [Phase 6 — Investigation & Workflows](#phase-6---investigation--workflows)
-
 
 
 ---
-
 
 
 ## Phase 1 - Réseaux virtuels
@@ -467,9 +461,38 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
 
 
 
+---
 
 
 
+## Phase 5 - Configuration du Honeypot
+
+### 🎯 Objectif  
+  - Mettre en place un honeypot web sur le serveur IIS de notre VM SOC-W11 afin de détecter des activités de reconnaissance potentielles.  
+  - Créer une page leurre (`/really-confidential-data.html`) et un fichier `robots.txt` mal configuré, afin d’attirer et identifier les tentatives d’accès suspects.  
+  - Les accès sont enregistrés par IIS, collectés via le Splunk Universal Forwarder et centralisés dans l’index `iis_logs` du SOC Splunk Server pour analyse et détection en temps réel.  
+
+> ⚠️ Ce honeypot est déployé uniquement à des fins démonstratives dans le cadre d’un projet blue team. Le serveur IIS n’a pas été enrichi d’autres contenus, l’objectif étant de se concentrer sur un unique endpoint vulnérable pour la détection et l’alerte.
+
+
+
+
+### 1. Installation IIS
+  - Ouvrir **Control Panel → Programs → Turn Windows features on or off**.   
+  - Activer **Internet Information Services** (cocher *Web Management Tools* et *World Wide Web Services*).    
+    ![iis-1](./images/iis-1.png)  
+  - Vérifier le service en ouvrant `http://localhost` sur la VM : la page d’accueil IIS doit s’afficher.    
+    ![iis-2](./images/iis-2.png)    
+
+
+### 2. Création de la page honeypot
+  - Dans le répertoire racine IIS `C:\inetpub\wwwroot`, j’ai créé un fichier HTML 'fictif' intitulé `really-confidential-data.html`.
+  - Ce fichier simule un document interne sensible, conçu pour attirer l’attention d’un attaquant ou d’un outil d’énumération automatisé.  
+  - Pour rajouter à l'injure, j’ai ajouté un lien « Download CSV Export » pointant vers `totally-not-sensitive-2025.csv`. Le fichier ne contient évidemment aucune donnée réelle, uniquement un message d’avertissement destiné aux curieux non autorisés.
+
+
+
+- Tester localement : `http://localhost/really-confidential-data.html` → vérifier l’affichage et le lien de téléchargement.
 
 
 
