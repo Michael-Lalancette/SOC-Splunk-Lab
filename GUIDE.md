@@ -478,5 +478,3 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
 
 
 
-
-
