@@ -468,11 +468,11 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
 ## Phase 5 - Configuration du Honeypot
 
 ### 🎯 Objectif  
-  - Mettre en place un honeypot web sur le serveur IIS de notre VM SOC-W11 afin de détecter des activités de reconnaissance potentielles.  
-  - Créer une page leurre (`/really-confidential-data.html`) et un fichier `robots.txt` mal configuré, afin d’attirer et identifier les tentatives d’accès suspects.  
-  - Les accès sont enregistrés par IIS, collectés via le Splunk Universal Forwarder et centralisés dans l’index `iis_logs` du SOC Splunk Server pour analyse et détection en temps réel.  
+  - Déployer un honeypot web sur le serveur IIS de la VM SOC-W11 pour détecter d’éventuelles activités de reconnaissance.  
+  - Créer une page leurre (/really-confidential-data.html) ainsi qu’un fichier def-not-a-bait.txt volontairement mal configuré, afin d’attirer et identifier les accès suspects.  
+  - Les accès sont enregistrés dans les logs IIS, collectés par le Splunk Universal Forwarder puis centralisés dans l’index `iis_logs` du SOC Splunk Server pour analyse et détection en temps réel.  
 
-> ⚠️ Ce honeypot est déployé uniquement à des fins démonstratives dans le cadre d’un projet blue team. Le serveur IIS n’a pas été enrichi d’autres contenus, l’objectif étant de se concentrer sur un unique endpoint vulnérable pour la détection et l’alerte.
+> ⚠️ Ce honeypot est déployé uniquement à des fins démonstratives dans le cadre d’un projet blue team. Le serveur IIS n’a pas été enrichi d’autres contenus, l’objectif étant de se concentrer sur un seul endpoint vulnérable pour la tester détection et les alertes.
 
 
 
@@ -485,14 +485,150 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
     ![iis-2](./images/iis-2.png)    
 
 
-### 2. Création de la page honeypot
-  - Dans le répertoire racine IIS `C:\inetpub\wwwroot`, j’ai créé un fichier HTML 'fictif' intitulé `really-confidential-data.html`.
-  - Ce fichier simule un document interne sensible, conçu pour attirer l’attention d’un attaquant ou d’un outil d’énumération automatisé.  
-  - Pour rajouter à l'injure, j’ai ajouté un lien « Download CSV Export » pointant vers `totally-not-sensitive-2025.csv`. Le fichier ne contient évidemment aucune donnée réelle, uniquement un message d’avertissement destiné aux curieux non autorisés.
+### 2. Créer le contenu du Honeypot
+  - Créer page leurre HTML `really-confidential-data.html`  
+    - Ouvrir le Notepad (ou tout éditeur texte) avec les droits administrateur.  
+    - Copiez‑collez le code HTML fourni.  
+    ```html
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Customer Data Archive — Confidential</title>
+      <style>
+        :root{--brand:#0b66c3;--muted:#777;--card:#fff;--bg:#f4f6f8}
+        body{font-family: "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:#111;margin:28px}
+        .container{max-width:1100px;margin:0 auto;background:var(--card);border:1px solid #e3e6ea;border-radius:8px;padding:22px;box-shadow:0 8px 30px rgba(15,30,45,0.04)}
+        header{display:flex;align-items:center;gap:16px}
+        .logo{width:84px;height:84px;background:linear-gradient(180deg,#0b66c3,#084f8f);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(11,102,195,0.18)}
+        .logo span{display:flex;align-items:center;gap:8px}
+        .logo .flake{font-size:22px}
+        h1{margin:0;font-size:20px;color:#0b3b66}
+        .meta{color:var(--muted);margin:8px 0 18px;font-size:14px}
+        .details{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+        .details div{background:#fafbfc;padding:12px;border-radius:8px;border:1px solid #eef2f6;font-size:13px;min-width:160px}
+        .download{margin:18px 0}
+        .btn{display:inline-block;padding:10px 18px;background:var(--brand);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;box-shadow:0 6px 18px rgba(11,102,195,0.16)}
+        .btn:hover{background:#094a8f;transform:translateY(-1px);transition:all .12s ease}
+        table{width:100%;border-collapse:collapse;margin-top:18px;background:#fff;border-radius:6px;overflow:hidden}
+        th,td{padding:10px;border-bottom:1px solid #eef2f6;text-align:left;font-size:13px}
+        th{background:#f7fafc;color:#333;font-weight:700}
+        tbody tr:nth-child(even){background:#fbfdff}
+        footer{margin-top:18px;font-size:12px;color:var(--muted)}
+        .legal{margin-top:12px;color:#444;font-size:13px}
+        .small-muted{font-size:12px;color:#999;margin-top:8px}
+      </style>
+    </head>
+    <body>
+      <div class="container" role="main" aria-labelledby="title">
+        <header>
+          <div class="logo" aria-hidden="true"><span class="flake">❄</span><strong>SNOW</strong></div>
+          <div>
+            <h1 id="title">Customer Data Archive</h1>
+            <div class="meta">Export generated for internal compliance review — access restricted to authorized personnel only.</div>
+          </div>
+        </header>
+    
+        <section>
+          <div class="details" aria-label="Export metadata">
+            <div><strong>File name</strong><br>totally-not-sensitive-2025.csv</div>
+            <div><strong>Status</strong><br>Confidential — Do Not Distribute</div>
+            <div><strong>Last updated</strong><br>2025-09-25 11:11 UTC</div>
+            <div><strong>Owner</strong><br>Data Governance</div>
+            <div><strong>Department</strong><br>Cybersecurity</div>
+            <div><strong>Records</strong><br>12,483</div>
+            <div><strong>Size</strong><br>93 GB</div>
+          </div>
+    
+          <div class="download">
+            <a class="btn" href="totally-not-sensitive-2025.csv" download aria-label="Download CSV Export">📥 Download CSV Export (93 GB)</a>
+          </div>
+    
+          <div class="legal">
+            <p><strong>Purpose:</strong> Export prepared by the Data Governance team for scheduled audit and validation tasks. Handle and retain under company retention policy.</p>
+          </div>
+    <table aria-label="sample preview">
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>first_name</th>
+          <th>last_name</th>
+          <th>email</th>
+          <th>country</th>
+          <th>status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>John</td><td>Doe</td><td>john.doe@snow.corp</td><td>🇷🇺</td><td>active</td></tr>
+        <tr><td>2</td><td>Michael</td><td>Lalancette</td><td>michael.lalancette@snow.corp</td><td>🇨🇦</td><td>active</td></tr>
+        <tr><td>3</td><td>Edward</td><td>Snowden</td><td>edward.snowden@snow.corp</td><td>🇺🇸</td><td>inactive</td></tr>
+        <tr><td>4</td><td>Linus</td><td>Torvalds</td><td>linus.torvalds@snow.corp</td><td>🇫🇮</td><td>inactive</td></tr>
+      </tbody>
+    </table>
+    
+    
+          <footer>
+            <p>Contact: data-governance@acme.corp — For authorized use only.</p>
+            <p class="small-muted">This document and the contained data are proprietary and confidential. Unauthorized access, use or distribution is strictly prohibited and may result in disciplinary or legal action.</p>
+          </footer>
+        </section>
+      </div>
+    </body>
+    </html>
+    ```
+
+    - Enregistrer le fichier sous `C:\inetpub\wwwroot\really-confidential-data.html`  
+    - Vérifier l’accès : `http://localhost/really-confidential-data.html`  
+       ![iis-3](./images/iis-3.png)  
+
+    > 💡 Cette page imite un document interne sensible et contient un lien de téléchargement destiné à piéger les visiteurs non autorisés.  
+
+d
+
+  - Fichier CSV `totally-not-sensitive-2025.csv`
+    - Créer nouveau fichier txt contenant le message d'avertissement.
+    - Coller le contenu CSV :  
+     ```csv
+     ID;Col1;Col2;Col3;Col4;Col5
+     0;"*** WARNING ***";"Nice try!";"You just fell into a honeypot.";"💻";"Caught"
+     1;"This incident has been logged.";"Your IP has been sent to Santa Claus.";"🎅";"Naughty List"
+     ```  
+    - Enregistrer le fichier dans le répertoire IIS sous `C:\inetpub\wwwroot\really-confidential-data.html`   
+  
+  
+  
+  
+  - Toujours dans le répertoire racine IIS, créer le ficher `totally-not-sensitive-2025.csv`.  
+  > 💡 Ce fichier ne contient évidemment aucune donnée réelle, uniquement un message d’avertissement destiné aux curieux non autorisés.  
+  
+  ```csv
+  ID;Col1;Col2;Col3;Col4;Col5
+  0;"*** WARNING ***";"Nice try!";"You just fell into a honeypot.";"💻";"Caught"
+  1;"This incident has been logged.";"Your IP has been sent to Santa Claus.";"🎅";"Naughty List"
+  ```  
+
+  - Vérifier localement : `http://localhost/really-confidential-data.html`
+    - Cliquer sur le lien de téléchargement pour vérifier le logging IIS.  
+  ![iis-3](./images/iis-3.png)
+
+
+### 3. Créer l'appât
+  - Pour attirer les scanners automatisés et rendre le piège plus attrayant/visible aux outils d'énumération, créer un `robots.txt` simple :  
+    ```txt
+    User-agent: *
+    Disallow: /really-confidential-data.html
+    Disallow: /totally-not-sensitive-2025.csv
+    ```
+  > 💡 Ce fichier n’empêche pas l’accès ; il signale simplement aux crawlers (et aux scanners malveillants) les chemins 'intéressants'. Dans un honeypot contrôlé c’est utile, en production réelle, ne jamais lister de contenus sensibles.
 
 
 
-- Tester localement : `http://localhost/really-confidential-data.html` → vérifier l’affichage et le lien de téléchargement.
+
+
+
+
+
 
 
 
