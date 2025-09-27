@@ -707,13 +707,17 @@ Détecter, en temps réel, toute requête HTTP vers la page honeypot `/really-co
   - consigner les champs pertinents dans le lookup CSV `honeypot_hits.csv`.  
 
 
-**Créer l'alerte :**  
-  - Depuis `Search & Reporting`, après avoir rentré la requête (`index=iis_logs sourcetype=iis cs_uri_stem="/really-confidential-data.html`, cliquer sur `Save As → Alert`  
-  - Title : ALERTE - Accès Honeypot 
-  - Description : Déclenchée lors d’un accès à la page /really-confidential-data.html (reconnaissance/énumération).  
-  - Permissions : Private (puisqu'on est dans un lab isolé).  
-  - Alert Type : Real-time (pour détection immédiate).  
-  - Expires : 30 jours
+### **Créer l'alerte :**  
+  - Depuis `Search & Reporting`, exécuter la requête :
+    ```spl
+    index=iis_logs sourcetype=iis cs_uri_stem="/really-confidential-data.html
+    ```
+  - Cliquer sur `Save As → Alert`  
+    - Title : ALERTE - Accès Honeypot 
+    - Description : Déclenchée lors d’un accès à la page /really-confidential-data.html (reconnaissance/énumération). 
+    - Permissions : Private (puisqu'on est dans un lab isolé).  
+    - Alert Type : Real-time (pour détection immédiate).  
+    - Expires : 30 jours  
 
   > 💡 Pour éviter que des outils d’énumération tels que `Gobuster`, `Dirb`, etc. ne génèrent une avalanche d’alertes, j’ai configuré l’alerte afin qu’elle ne se déclenche qu’une fois par rafale, en utilisant une fenêtre de 1 minute et un throttling de 5 minutes. Ainsi, les accès répétés dans ce laps de temps sont ignorés, limitant le bruit tout en conservant la visibilité sur chaque incident.  
 
@@ -723,25 +727,97 @@ Détecter, en temps réel, toute requête HTTP vers la page honeypot `/really-co
   - Suppress triggering for : 5 minutes (throttle)  
   ![alerte-1](./images/alerte-1.png)
 
-  > ✅ En résumé, l’alerte se déclenche dès la première visite du Honeypot, puis, grâce à un throttle de 5 minutes, les accès répétés sont ignorés. L’événement reste consigné et consultable, mais 1 seul e‑mail et 1 seule alerte sont envoyés pour chaque fenêtre d’incident.  
+  > ✅ En résumé, l’alerte se déclenche dès la première visite du Honeypot, puis, grâce à un throttle de 5 minutes, les accès répétés sont ignorés. L’événement reste consigné et consultable, mais 1 seul e‑mail et 1 seule alerte sont envoyés pour chaque fenêtre d’incident.
 
 
+### **Trigger Actions :**  
 
-**Trigger Actions :**  
-Définir ce qui arrive lorsqu'une alerte est triggered.   
-  - 
+Définir ce qui arrive lorsqu'une alerte se déclenche.    
 
-
-
-
-
-
+#### Action 1 – Add to Triggered Alerts  
+- **Severity :** High  
+  ![alerte-2](./images/alerte-2.png)  
+> 💡 Toute visite de la page honeypot est par définition suspecte → sévérité haute.  
 
 
+#### Action 2 – Send Email
 
+1. **Créer un compte Mailtrap**
+   - S'inscrire sur [Mailtrap.io](https://mailtrap.io).  
+   - L’offre gratuite fournit un serveur SMTP et une boîte *sandbox* suffisante pour les tests du SOC-LAB.  
+   > 💡 **Email Sandbox** de Mailtrap est spécifiquement conçue pour tester l’envoi d’e-mails en environnement de test/développement, sans sortie vers l’extérieur.   
+
+2. **Récupérer les identifiants SMTP**
+   - Dans le tableau de bord Mailtrap : Sandbox → SMTP credentials    
+     ![alerte-3](./images/alerte-3.png)   
+
+3. **Configurer Splunk**  
+  - Dans Splunk : Settings → Server Settings → Email Settings   
+  - Définir le serveur utilisé par Splunk pour acheminer les alertes :  
+    - Mail host : `sandbox.smtp.mailtrap.io`  
+    - Email security : Enable TLS  
+    - Username : `62d2abc10f2b15`  
+    - Password : (voir capture)  
+    - Allowed domains :** `soc-admin.local`   
+     ![alerte-4](./images/alerte-4.png)  
+
+   - Link hostname : `secops-desktop` (définir dans `/etc/hosts`)    
+     ![alerte-5](./images/alerte-5.png)    
+     > 💡 Garantit que lorsqu’un e-mail d’alerte contient une URL du type `http://secops-desktop:8000/en-US/app/search/...` le poste analyste résout `secops-desktop` vers l’IP du serveur Splunk même sans DNS interne.     
+
+   - Send email as : `alerts@siem.soclab.local`  
+     ![alerte-6](./images/alerte-6.png)   
+
+
+4. **Notification par e-mail**
+Alerte immédiatement le SOC à chaque accès à la page honeypot.  
+  - To : analyste@soc-admin.local  
+  - Priority : High  
+  - Subject : ALERTE - Accès Honeypot  
+  - Message :  
+    ```bash
+    La page honeypot /really-confidential-data.html a été consultée.
+    
+    Host : $result.host$
+    IP src : $result.c_ip$
+    Time : $result.readable_time$
+    User-Agent : $result.cs_user_agent$
+    
+    Consulter le log complet dans Splunk :
+    $results.url$
+    ```   
+    ![alerte-7](./images/alerte-7.png)   
 
 
     
+#### Action 3 – Résultats dans un lookup CSV
+
+Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/corrélation.  
+
+- **Lookup name :** `honeypot_hits.csv`
+- **Mode :** `Append` (ajout sans écrasement)
+- **Champs enregistrés (exemple) :** `host, c_ip, readable_time, cs_user_agent, uri_path`
+
+> 📌 Utilisation ultérieure :
+> - Source pour **tableaux de bord** Splunk
+> - **Enrichissement** via Threat Intelligence (lookups/scripts)
+> - **Corrélation** avec firewall / endpoint / proxy
+
+![lookup-config](./images/lookup-config.png)
+
+**Si le lookup n’existe pas :**
+1. **Settings → Lookups → Lookup tables → New lookup table**
+2. **Nom :** `honeypot_hits.csv` | **App :** (ex. `security`)  
+3. **Permissions :** lecture/écriture pour le rôle exécutant l’alerte (ex. `admin`/`power`)
+
+**Vérifier le contenu dans Search & Reporting :**
+```spl
+| inputlookup honeypot_hits.csv
+``` 
+
+Résumé après configuration :
+- Après avoir activé les trois actions — Triggered Alerts, Send Email, et Output to Lookup — sauvegarder l’alerte puis consulter sa vue récapitulative.  
+- Au moment de la revue, aucun événement déclenché (attendu si la page honeypot n’a pas encore été visitée). L’alerte est en attente et réagira dès qu’un accès suspect sera détecté.  
 
 
 
