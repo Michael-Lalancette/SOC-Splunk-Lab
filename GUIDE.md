@@ -170,9 +170,9 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
     ![kali-cli-verif-1](./images/kali-cli-verif-1.png)    
     ![kali-cli-verif-2](./images/kali-cli-verif-2.png)     
 
-  - N.B : Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu de la machine Windows.    
+  > ⚠️ Pour autoriser le ping vers la machine Windows, il faut activer la règle **ICMPv4-In** dans le pare-feu de la machine Windows.    
     ![win11-firewall-icmpv4](./images/win11-firewall-icmpv4.png)  
-    - Une fois la règle activée, la commande `ping 10.7.0.20 -c 3` confirme la connectivité.  
+  > Une fois la règle activée, la commande `ping 10.7.0.20 -c 3` confirme la connectivité.  
 
 
 > ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
@@ -350,9 +350,9 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
 
 
 ### 3. Activation du port de réception sur l’indexer
-  - Même si l’IP de l’indexer (`10.7.0.10`) et le port de transmission (`9997`) ont été définis lors de l’installation du UF, l'**indexer** doit explicitement être configuré pour écouter sur ce port.     
-    - Le Forwarder définit uniquement la destination des journaux (`outputs.conf`).  
-    - L’Indexer doit, quant à lui, être configuré pour accepter les flux entrants sur ce port, sans quoi les événements seront ignorés.
+Même si l’IP de l’indexer (`10.7.0.10`) et le port de transmission (`9997`) ont été définis lors de l’installation du UF, l'**indexer** doit explicitement être configuré pour écouter sur ce port.     
+  - Le Forwarder définit uniquement la destination des journaux (`outputs.conf`).  
+  - L’Indexer doit, quant à lui, être configuré pour accepter les flux entrants sur ce port, sans quoi les événements seront ignorés.  
 
   - Depuis l’interface Splunk (`http://10.7.0.10:8000`) :  
     1. Accéder à **Settings ➝ Forwarding and Receiving**.  
@@ -377,37 +377,40 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
 
 
 ### 4. Définition des sources de logs via `inputs.conf`  
-  - Après avoir relié le UF à l’indexer (`outputs.conf`), définir quels logs Windows seront collectés.  
-  - Cela se fait par l'entremise du fichier de configuration `inputs.conf`, localisé dans :  
-     `C:\Program Files\SplunkUniversalForwarder\etc\system\local`  
-      - `outputs.conf` → indique **destination** (où envoyer) les données (`10.7.0.10:9997`).  
-      - `inputs.conf` → indique **sources** à collecter (ex : logs Windows).  
-      ![uf-config-1](./images/uf-config-1.png)  
-
-
-  - Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf), dans un environnement **sans Deployment Server** (comme dans ce lab), il est nécessaire de créer et éditer manuellement le fichier `inputs.conf` :  
-    - Je l'ai donc créer manuellement avec **Notepad**, puis ajouté les **stanzas** suivants :  
-      ```ini
-       [WinEventLog://Security]
-       disabled = 0
-       index = win_logs
+Après avoir relié le UF à l’indexer (`outputs.conf`), définir quels logs Windows seront collectés.  
   
-       [WinEventLog://System]
-       disabled = 0
-       index = win_logs
+Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf), dans un environnement **sans Deployment Server** (comme dans ce lab), cela se fait par l'entremise du fichier de configuration `inputs.conf`, localisé dans :  
+  `C:\Program Files\SplunkUniversalForwarder\etc\system\local`   
+  
+  
+  
+  - `outputs.conf` → indique **destination** (où envoyer) les données (`10.7.0.10:9997`).  
+    ![uf-config-1](./images/uf-config-1.png)    
+  - `inputs.conf` → indique **sources** à collecter (ex : logs Windows).    
 
-       [WinEventLog://Application]
-       disabled = 0
-       index = win_logs
-       ``` 
-      ![uf-config-2](./images/uf-config-2.png)  
+  - Créer manuellement `inputs.conf`, puis ajouter les **stanzas** suivants :   
+    ```ini
+    [WinEventLog://Security]
+    disabled = 0
+    index = win_logs
+  
+    [WinEventLog://System]
+    disabled = 0
+    index = win_logs
+
+    [WinEventLog://Application]
+    disabled = 0
+    index = win_logs
+    ```
+    ![uf-config-2](./images/uf-config-2.png)  
+      
     > 💡 Ces stanzas activent la collecte des trois canaux de logs Windows les plus critiques (Sécurité, Système et Application) et les centralisent vers l'index `win_logs`.    
 
 
   - Après enregistrement, le UF contient désormais :  
     - `outputs.conf` → destination (`10.7.0.10:9997`)  
     - `inputs.conf` → sources de logs à collecter  
-      ![uf-config-3](./images/uf-config-3.png)
+  ![uf-config-3](./images/uf-config-3.png)  
 
  
   - Appliquer/valider la configuration
@@ -468,11 +471,11 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
 ## Phase 5 - Configuration du Honeypot
 
 ### 🎯 Objectif  
-  - Déployer un honeypot web sur le serveur IIS de la VM SOC-W11 pour détecter d’éventuelles activités de reconnaissance.  
-  - Créer une page leurre (/really-confidential-data.html) ainsi qu’un fichier def-not-a-bait.txt volontairement mal configuré, afin d’attirer et identifier les accès suspects.  
-  - Les accès sont enregistrés dans les logs IIS, collectés par le Splunk Universal Forwarder puis centralisés dans l’index `iis_logs` du SOC Splunk Server pour analyse et détection en temps réel.  
+  - Déployer un honeypot web sur IIS dans la VM SOC-W11 pour détecter des activités de reconnaissance.   
+  - Créer une page leurre (`/really-confidential-data.html`) ainsi qu’un faux fichier CSV (`totally-not-sensitive-2025.csv`) accompagnés d'un `fichier robots.txt` volontairement mal configuré pour attirer et identifier les accès suspects.  
+  - Les accès sont enregistrés dans les logs IIS, collectés par le Splunk Universal Forwarder puis centralisés dans l’index `iis_logs` du SOC Splunk Server pour analyse/détection en temps réel.  
 
-> ⚠️ Ce honeypot est déployé uniquement à des fins démonstratives dans le cadre d’un projet blue team. Le serveur IIS n’a pas été enrichi d’autres contenus, l’objectif étant de se concentrer sur un seul endpoint vulnérable pour la tester détection et les alertes.
+> ⚠️ Le serveur IIS n’a pas été enrichi d’autres contenus, l’objectif étant de se concentrer sur un seul endpoint vulnérable pour la tester détection et les alertes.  
 
 
 
@@ -485,10 +488,13 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
     ![iis-2](./images/iis-2.png)    
 
 
+
+
+
 ### 2. Créer le contenu du Honeypot
   - Créer page leurre HTML `really-confidential-data.html`  
     - Ouvrir le Notepad (ou tout éditeur texte) avec les droits administrateur.  
-    - Copiez‑collez le code HTML fourni.  
+    - Copier‑coller le code HTML fourni.  
     ```html
     <!doctype html>
     <html lang="en">
@@ -578,49 +584,168 @@ Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC
     </html>
     ```
 
-    - Enregistrer le fichier sous `C:\inetpub\wwwroot\really-confidential-data.html`  
+    - Enregistrer le fichier dans le répertoire IIS sous  `C:\inetpub\wwwroot\really-confidential-data.html`  
     - Vérifier l’accès : `http://localhost/really-confidential-data.html`  
        ![iis-3](./images/iis-3.png)  
 
-    > 💡 Cette page imite un document interne sensible et contient un lien de téléchargement destiné à piéger les visiteurs non autorisés.  
+    > 💡 Cette page imite un document interne sensible et contient un lien de téléchargement destiné à piéger les curieux.    
 
-d
 
-  - Fichier CSV `totally-not-sensitive-2025.csv`
-    - Créer nouveau fichier txt contenant le message d'avertissement.
-    - Coller le contenu CSV :  
+
+
+
+  - Créer fichier CSV `totally-not-sensitive-2025.csv`
+    - Ouvrir le Notepad (ou tout éditeur texte) avec les droits administrateur.  
+    - Copier-coller le contenu CSV :  
      ```csv
      ID;Col1;Col2;Col3;Col4;Col5
      0;"*** WARNING ***";"Nice try!";"You just fell into a honeypot.";"💻";"Caught"
      1;"This incident has been logged.";"Your IP has been sent to Santa Claus.";"🎅";"Naughty List"
      ```  
     - Enregistrer le fichier dans le répertoire IIS sous `C:\inetpub\wwwroot\really-confidential-data.html`   
-  
-  
-  
-  
-  - Toujours dans le répertoire racine IIS, créer le ficher `totally-not-sensitive-2025.csv`.  
-  > 💡 Ce fichier ne contient évidemment aucune donnée réelle, uniquement un message d’avertissement destiné aux curieux non autorisés.  
-  
-  ```csv
-  ID;Col1;Col2;Col3;Col4;Col5
-  0;"*** WARNING ***";"Nice try!";"You just fell into a honeypot.";"💻";"Caught"
-  1;"This incident has been logged.";"Your IP has been sent to Santa Claus.";"🎅";"Naughty List"
-  ```  
-
-  - Vérifier localement : `http://localhost/really-confidential-data.html`
     - Cliquer sur le lien de téléchargement pour vérifier le logging IIS.  
-  ![iis-3](./images/iis-3.png)
+    ![iis-4](./images/iis-4.png)
+ 
+    > 💡 Ce fichier ne contient évidemment aucune donnée réelle, uniquement un message d’avertissement destiné aux curieux non autorisés.  
 
 
-### 3. Créer l'appât
-  - Pour attirer les scanners automatisés et rendre le piège plus attrayant/visible aux outils d'énumération, créer un `robots.txt` simple :  
+
+
+
+### 3. Créer l'appât `robots.txt`
+  - Toujours dans `C:\inetpub\wwwroot`, créer un fichier texte intitulé `robots.txt`.  
+  - Copier-coller le contenu texte :  
     ```txt
     User-agent: *
     Disallow: /really-confidential-data.html
     Disallow: /totally-not-sensitive-2025.csv
     ```
-  > 💡 Ce fichier n’empêche pas l’accès ; il signale simplement aux crawlers (et aux scanners malveillants) les chemins 'intéressants'. Dans un honeypot contrôlé c’est utile, en production réelle, ne jamais lister de contenus sensibles.
+  > 💡 Ce fichier ne constitue en aucun cas une mesure de sécurité ; au contraire, il sert volontairement d’appât : il trahit la présence de ressources fictives aux outils de reconnaissance automatisés (gobuster, dirb, nikto, etc.).
+
+
+
+
+### 4. Création de l'index `iis_logs`
+Avant d’envoyer les journaux IIS vers Splunk, il faut créer un index de destination. Sans cet index, les logs seraient ignorés.   
+  - Sur l'interface Splunk, aller sur `Settings → Indexes → New Index`.   
+    - Nommer l'index `iis_logs` et laisser les autres options par défaut.  
+    - Sauvegarder.  
+    ![iis-5](./images/iis-5.png)    
+  > 💡 L'index apparaît ensuite dans la liste avec le statut Active et recevra les logs IIS.   
+
+
+
+### 5. Configurer le UF pour envoyer événements vers `iis_logs`
+Pour collecter les logs IIS d’une machine Windows, il faut éditer manuellement le fichier `inputs.conf` du Forwarder afin de préciser :
+- le chemin des logs IIS (C:\inetpub\logs\LogFiles\W3SVC1\*.log),  
+- le sourcetype (iis),  
+- l’index de destination (iis_logs).
+
+  - Modification de `inputs.conf` :
+    - Sur la VM SOC-W11, éditer `C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf`, ajouter le bloc suivant :     
+      ```ini
+      [monitor://C:\inetpub\logs\LogFiles\W3SVC1\*.log]
+      disabled = 0
+      index = iis_logs
+      sourcetype = iis
+      crcLength = 1024
+      crcSalt = <SOURCE>
+      alwaysOpenFile = true
+      ```
+      ![iis-6](./images/iis-6.png)
+ 
+    - Ce paramétrage permet au Forwarder de :  
+      - surveiller de tous les fichiers `.log` du répertoire IIS,  
+      - envoyer les événements vers l’index `iis_logs`,  
+      - utiliser le `sourcetype=iis` pour un parsing structuré (txt brut → champ structuré),   
+      - `crcSalt` et `alwaysOpenFile` assurent une lecture continue et évitent les doublons.  
+     
+  - Redémarrer le service pour appliquer la nouvelle configuration.
+    ```powershell
+    cd 'C:\Program Files\SplunkUniversalForwarder\bin\'
+    .\splunk restart
+    ```
+
+  - Génération événements et vérification des logs
+    - Accéder au honeypot `http://localhost/really-confidential-data.html`.  
+    - Télécharger le CSV pour générer davantage de bruit.  
+    - Valider qu'un log a bien été créé dans le répertoire `C:\inetpub\logs\LogFiles\W3SVC1\`.  
+      ![iis-7](./images/iis-7.png)
+
+  - Vérification dans Splunk
+    - Depuis l'onglet `Search & Reporting`, lancer une recherche :
+      ```spl
+      index=iis_logs sourcetype=iis
+      ```
+      ![iis-8](./images/iis-8.png)
+
+    > ✅ Les événements sont bien ingérés dans Splunk :  
+    > - Source correcte (`C:\inetpub\logs\LogFiles\W3SVC1\`)  
+    > - Hôte identifié comme `SOC-W11`  
+    > - Requêtes HTTP `GET` sur `/really-confidential-data.html` et `/totally-not-sensitive-2025.csv`  
+      
+  
+
+**Résultat ✅ :** Le honeypot web est opérationnel, les journaux IIS sont bien transmis et indexés dans Splunk.
+La prochaine étape consiste à mettre en place une alerte temps réel pour détecter automatiquement tout accès au leurre.  
+
+
+
+
+
+---
+
+
+
+
+## Phase 6 - Configuration Alertes
+
+### 🎯 Objectif  
+Détecter, en temps réel, toute requête HTTP vers la page honeypot `/really-confidential-data.html` et :
+  - enregistrer l’événement dans Triggered Alerts (sévérité High) ;  
+  - envoyer une notification e‑mail (SMTP Mailtrap) ;  
+  - consigner les champs pertinents dans le lookup CSV `honeypot_hits.csv`.  
+
+
+**Créer l'alerte :**  
+  - Depuis `Search & Reporting`, après avoir rentré la requête (`index=iis_logs sourcetype=iis cs_uri_stem="/really-confidential-data.html`, cliquer sur `Save As → Alert`  
+  - Title : ALERTE - Accès Honeypot 
+  - Description : Déclenchée lors d’un accès à la page /really-confidential-data.html (reconnaissance/énumération).  
+  - Permissions : Private (puisqu'on est dans un lab isolé).  
+  - Alert Type : Real-time (pour détection immédiate).  
+  - Expires : 30 jours
+
+  > 💡 Pour éviter que des outils d’énumération tels que `Gobuster`, `Dirb`, etc. ne génèrent une avalanche d’alertes, j’ai configuré l’alerte afin qu’elle ne se déclenche qu’une fois par rafale, en utilisant une fenêtre de 1 minute et un throttling de 5 minutes. Ainsi, les accès répétés dans ce laps de temps sont ignorés, limitant le bruit tout en conservant la visibilité sur chaque incident.  
+
+  - Trigger Condition : Number of Results > 0   
+  - Time Window : 1 minute 
+  - Trigger Alert : Once  
+  - Suppress triggering for : 5 minutes (throttle)  
+  ![alerte-1](./images/alerte-1.png)
+
+  > ✅ En résumé, l’alerte se déclenche dès la première visite du Honeypot, puis, grâce à un throttle de 5 minutes, les accès répétés sont ignorés. L’événement reste consigné et consultable, mais 1 seul e‑mail et 1 seule alerte sont envoyés pour chaque fenêtre d’incident.  
+
+
+
+**Trigger Actions :**  
+Définir ce qui arrive lorsqu'une alerte est triggered.   
+  - 
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
 
 
 
