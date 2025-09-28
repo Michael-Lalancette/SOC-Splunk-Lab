@@ -13,7 +13,7 @@
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
 - [Phase 4 — Déploiement du Universal Forwarder (SOC-W11)](#phase-4---déploiement-du-universal-forwarder-soc-w11)
 - [Phase 5 — Configuration du Honeypot](#phase-5---configuration-du-honeypot)
-- [Phase 6 — Configuration des Alertes](#phase-6---configuration-alertes)
+- [Phase 6 — Configuration des Alertes](#phase-6---configuration-des-alertes)
 
 
 
@@ -760,7 +760,7 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
 1. **Créer un compte Mailtrap**
    - S'inscrire sur [Mailtrap.io](https://mailtrap.io).  
    - L’offre gratuite fournit un serveur SMTP et une boîte *sandbox* suffisante pour les tests du SOC-LAB.  
-   > 💡 **Email Sandbox** de Mailtrap est spécifiquement conçue pour tester l’envoi d’e-mails en environnement de test/développement, sans sortie vers l’extérieur.   
+  > 💡 **Email Sandbox** de Mailtrap est spécifiquement conçue pour tester l’envoi d’e-mails en environnement de test/développement, sans sortie vers l’extérieur.   
 
 2. **Récupérer les identifiants SMTP**
    - Dans le tableau de bord Mailtrap : Sandbox → SMTP credentials    
@@ -772,11 +772,11 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
     - Mail host : `sandbox.smtp.mailtrap.io`  
     - Email security : Enable TLS  
     - Username : `62d2abc10f2b15`  
-    - Password : (voir capture)  
-    - Allowed domains :** `soc-admin.local`   
+    - Password : `*********`  
+    - Allowed domains : `soc-admin.local`   
      ![alerte-4](./images/alerte-4.png)  
 
-   - Link hostname : `secops-desktop` (définir dans `/etc/hosts`)    
+   - Link hostname : `secops-desktop` (à définir dans `/etc/hosts`)    
      ![alerte-5](./images/alerte-5.png)    
      > 💡 Garantit que lorsqu’un e-mail d’alerte contient une URL du type `http://secops-desktop:8000/en-US/app/search/...` le poste analyste résout `secops-desktop` vers l’IP du serveur Splunk même sans DNS interne.     
 
@@ -787,7 +787,7 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
 4. **Notification par e-mail**
 
   Alerte immédiatement le SOC à chaque accès à la page honeypot.  
-  - To : analyste@soc-admin.local  
+  - To : soc-alerts@soc-admin.local  
   - Priority : High  
   - Subject : ALERTE - Accès Honeypot  
   - Message :  
@@ -795,12 +795,9 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
     La page honeypot /really-confidential-data.html a été consultée.
     
     Host : $result.host$
-    IP src : $result.c_ip$
+    IP src : $result.src_ip$
     Time : $result.readable_time$
-    User-Agent : $result.cs_user_agent$
-    
-    Consulter le log complet dans Splunk :
-    $results.url$
+    User-Agent : $result.user_agent$
     ```   
     ![alerte-7](./images/alerte-7.png)   
 
@@ -809,11 +806,11 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
 #### Action 3 – Output results to lookup
 Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/corrélation.  
   - **File name :** `honeypot_hits.csv`  
-  - **Mode :** `Append` (ajout sans écrasement)   
+  - **Mode :** `Append` (ajout non destructif)   
     ![alerte-8](./images/alerte-8.png)   
 
 
-> ✅ Résumé : Après avoir activé les trois actions — Triggered Alerts, Send Email, et Output to Lookup — sauvegarder l’alerte puis consulter sa vue récapitulative.    
+> ✅ Après avoir activé les trois actions — Triggered Alerts, Send Email, et Output to Lookup — sauvegarder l’alerte.  
 
 
 
@@ -828,19 +825,20 @@ Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/co
       ![alerte-9](./images/alerte-9.png)    
   
   2) **Réception du e-mail d'alerte**  
-    - Vérifier que **tous les champs** sont renseignés (host, IP src, horodatage, user-agent).  
+    - Vérifier que **tous les champs** sont renseignés (Host, IP src, Time, User-Agent).  
       ![alerte-10](./images/alerte-10.png)   
-    > ✅ Lien direct vers le log spécifique dans Splunk.   
-      ![alerte-11](./images/alerte-11.png)      
+
+      > ✅ Lien direct vers le log spécifique dans Splunk.   
+      ![alerte-11](./images/alerte-11.png)       
   
   
-  3) **Vérifier Triggered Alerts**
+  4) **Vérifier Triggered Alerts**
     - **Activity → Triggered Alerts** : une entrée **Severity = High** au moment du test.  
     - Le lien **View results** renvoie vers la recherche qui a déclenché.  
       ![alerte-12](./images/alerte-12.png)       
   
   
-  4) **Vérifier le lookup CSV**  
+  5) **Vérifier le lookup CSV**  
       ```spl  
       | inputlookup honeypot_hits.csv
       ```
@@ -862,7 +860,7 @@ Simuler une phase de reconnaissance/énumération côté attaquant et vérifier 
 ---
 
 #### 1) Scan de ports (Nmap)
-  - Depuis la VM Kali (SOC-ATK), lancer un TCP SYN scan furtif (`sS`) avec détection de version (`sV`) et scripts par défaut (`sC`) à la machine victime (SOC-W11) :  
+  - Depuis la VM Kali (SOC-ATK), lancer un TCP SYN scan furtif (`-sS`) avec détection de version (`-sV`) et scripts par défaut (`-sC`) à la machine victime (SOC-W11) :  
     ```bash
     nmap -sS -sV -sC -Pn -T3 10.7.0.20
     ```  
@@ -874,38 +872,36 @@ Simuler une phase de reconnaissance/énumération côté attaquant et vérifier 
       >- `T3` : profil temporel “Normal” (bon middle ground entre vitesse et discrétion).       
 
 
-  - Les résultats sont revenus rapidement : le **port 80** est **ouvert** et sert du contenu via **Microsoft IIS 10.0**.  
-  - Indices pertinents observés :  
-    - Page d’accueil **“IIS Windows”** (bannière HTTP cohérente).  
-    - Présence de **`/robots.txt`** avec au moins une directive **Disallow** (indice de ressources “cachées”).  
-    - Exposition du leurre **`/really-confidential-data.html`** (endpoint honeypot préconfiguré).  
-    - Méthode **HTTP TRACE** acceptée (mauvaise pratique / vecteur souvent signalé).  
-    - Empreinte réseau confirmant un hôte **Microsoft Windows** (résolution MAC/ARP).   
-      ![atk-1](./images/atk-1.png)   
+  - Les résultats sont revenus rapidement : le port 80 est ouvert et sert du contenu via Microsoft IIS 10.0.  
+    - Indices pertinents observés :  
+      - Page d’accueil 'IIS Windows' (bannière HTTP cohérente).  
+      - Présence de `/robots.txt` avec 2 entrées **Disallowed** (indice de ressources sensibles/cachées).  
+      - Exposition des leurres `/really-confidential-data.html` et `totally-not-sensitive-2025.csv`.  
+      - Méthode HTTP TRACE acceptée (mauvaise pratique / vecteur souvent signalé).  
+      - Hôte Microsoft Windows confirmé (résolution MAC/ARP).   
+        ![atk-1](./images/atk-1.png)   
 
 
 
 
 
 #### 2) Exploration
-À la suite de l’identification de l’endpoint exposé `/really-confidential-data.html`, limiter les artéfacts forensiques en utilisant `curl/wget` en CLI.  
-  - Consulter page-leurre :   
+Après avoir repéré `/really-confidential-data.html`, privilégier une collecte discrète via CLI pour réduire les artefacts forensiques : utiliser `curl/wget` plutôt qu’un navigateur.  
+  - Consulter la page `/really-confidential-data.html` avec `curl` :   
       ```bash
       curl http://10.7.0.20/really-confidential-data.html
       ```
-  > 💡 La page simule des données sensibles avec lien de téléchargement.  
       ![atk-2](./images/atk-2.png)  
       ![atk-2.5](./images/atk-2.5.png)  
+      > 💡 La page simule des données sensibles avec lien de téléchargement.  
 
-
-  - Télécharger CSV appât :   
+  - Télécharger le CSV associé avec `wget` :   
       ```bash 
       wget http://10.7.0.20/totally-not-sensitive-2025.csv
-      ```
-  > 💡 Le CSV est un leurre contrôlé (message d’avertissement, aucune donnée réelle).       
+      ```    
       ![atk-3](./images/atk-3.png)  
       ![atk-4](./images/atk-4.png)
-
+      > 💡 Le CSV est un leurre contrôlé (message d’avertissement, aucune donnée réelle).       
 
 
 
