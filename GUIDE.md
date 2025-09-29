@@ -779,20 +779,13 @@ Détecter, en temps réel, toute requête HTTP vers le honeypot `/really-confide
 ### **Créer l'alerte :**  
   - Depuis `Search & Reporting`, exécuter la requête :
     ```spl
-    index=iis_logs sourcetype=iis (cs_uri_stem="/really-confidential-data.html" OR uri_path="/really-confidential-data.html")
+    index=iis_logs sourcetype=iis
+    (cs_uri_stem="/really-confidential-data.html" OR uri_path="/really-confidential-data.html")
     | eval src_ip=coalesce(c_ip, client_ip, src)
     | eval user_agent=coalesce(cs_user_agent, cs_User_Agent, http_user_agent, User_Agent)
     | eval honeypot_uri=coalesce(cs_uri_stem, uri_path)
     | eval readable_time=strftime(_time, "%F %T")
-    | table host src_ip readable_time user_agent honeypot_uri 
-
-    index=iis_logs sourcetype=iis (cs_uri_stem="/really-confidential-data.html" OR uri_path="/really-confidential-data.html")
-    | eval src_ip=coalesce(c_ip, client_ip, src)
-    | eval user_agent=coalesce(cs_user_agent, cs_User_Agent, http_user_agent, User_Agent)
-    | eval honeypot_uri=coalesce(cs_uri_stem, uri_path)
-    | eval readable_time=strftime(_time, "%F %T")
-     ```
-*******************************te***********terter********************************5r3543g3g34g34gdwerweriokfhwerohjtertr
+    ```
 
   - Cliquer sur `Save As → Alert`  
     - Title : ALERTE - Accès Honeypot 
@@ -1140,9 +1133,9 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
 
 
 
-  > ✅ Ajouter le dashboard à la page d'accueuil → `Set as home dashboard`  
-  > Il apparaîtra à chaque ouverture de session :  
-  ![dash-8](./images/dash-8.png)    
+    > ✅ Ajouter le dashboard à la page d'accueuil → `Set as home dashboard`  
+    > Il apparaîtra à chaque ouverture de session :  
+    ![dash-8](./images/dash-8.png)    
 
 
 
@@ -1150,15 +1143,20 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
 
 ---
 
-## Phase 9 - Rapport SOC
+## Phase 9 - Rapport d'incident SOC
+
+#### Résumé exécutif
+  Le lab SOC a détecté et analysé une tentative d’accès non autorisée au leurre `/really-confidential-data.html`. L’événement principal provient d’une VM Kali (`10.7.0.30`) utilisant `curl`, suivi d’un téléchargement confirmé du leurre `/totally-not-sensitive-2025.csv` via `Wget`, indiquant une progression du repérage vers la collecte/exfiltration.  
+  > ✅ Le pipeline de détection (`SPL → alerte → SMTP`) et le dashboard Splunk ont fonctionné comme prévu.  
 
 
 
 
-
-
-
-
+#### Scope d'investigation  
+- Index analysé : `iis_logs`  
+- Sourcetype : `iis`  
+- Fichier logs : `C:\inetpub\logs\LogFiles\W3SVC1\...`
+- 
 
 
 
