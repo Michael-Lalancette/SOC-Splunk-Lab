@@ -1009,7 +1009,7 @@ Après avoir repéré `/really-confidential-data.html`, privilégier une collect
 Valider le flux opérationnel complet du lab :  
   `accès au leurre → alerte temps réel → triage analyste → visualisation dans Splunk`  
 
-  1) Déclenchement
+  1) 🚨 **Déclenchement**
   - Déclencheur : accès à `/really-confidential-data.html` depuis VM attaquante (SOC-ATK).  
   - Flow : `alerte splunk → SMTP Mailtrap → soc-alerts@soc-admin.local`  
     - Métadonnées observées dans l'e-mail :  
@@ -1020,33 +1020,73 @@ Valider le flux opérationnel complet du lab :
         ![mailtrap-1](./images/mailtrap-1.png)     
         > 💡 Lecture rapide : sujet explicite, champs clés présents, lien direct `View results` vers Splunk.
 
+
+
   
 
-  2) Triage analyste dans Splunk (N1)
+  2) 👨‍💻 **Triage analyste dans Splunk (N1)**
   - Depuis le lien de l’alerte, `View Results` et  `New Search` s’ouvre sur l’événement déclencheur (logs IIS).  
       ![mailtrap-2](./images/mailtrap-2.png)  
       ![mailtrap-3](./images/mailtrap-3.png)  
     - En aggrandissant les indexed fields, on obtient plusieurs données pertinentes :  
       ![mailtrap-4](./images/mailtrap-4.png)  
+
+
+
+
+
   
-  3) Vérification téléchargement du CSV (progression de l'intrusion)  
+  3) 👨‍💻 **Vérification téléchargement du CSV (progression de l'intrusion)**  
   - En modifiant la requête SPL, on peut voir que l'attaquant a également téléchargé le CSV :  
       ![mailtrap-5](./images/mailtrap-5.png)   
     > 💡 Signal SOC : séquence `curl` → `wget` = progression de kill chain du repérage/recon vers la collecte/exfiltration.  
 
 
 
-  4) Dashboard pour monitorer le Honeypot
-Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/quoi/quand/comment) et fournir un point d’entrée analyste (drilldown vers l’événement).
+
+
+
+  4) 📊 **Dashboard pour monitorer le Honeypot**
+Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/quoi/quand/comment) et fournir un point d’entrée analyste.  
+  
   - Création : `Search & Reporting → Onglet Dashboards → Create new dashboard`  
-    - Nom : Accès Honeypot - Triage SOC    
-    - Description : Monitoring en temps réel des accès au honeypot IIS : IP source, user-agent, code HTTP et fréquence d'occurence — prêt pour triage et corrélation.  
-    - Permissions : Private (lab).  
-    - Type : Classic Dashboards.  
+    - Nom : Dashboard - Accès Honeypot  
+    - Description : Monitoring en temps réel des accès au honeypot IIS  
+    - Permissions : Private  
+    - Type : Classic Dashboards   
     ![dash-1](./images/dash-1.png)   
 
-  - Ajout d'une Panel sommaire : `Add Panel → New → Events → Add to Dashboard`
-    -  Title : Accès Honeypot  
+    > 💡 Mon dashboard n'est qu'un exemple parmi tant d'autre, à vous de vous amusez avec les différentes features que Splunk propose.
+
+
+
+
+
+  - Ajout du premier panel : `Add Panel → New → Statistics Table`  
+    -  Title : Événements récents - Accès Honeypot (IIS)  
+    -  Time range : derniers 24h  
+    -  Search (SPL) :  
+      ```spl
+    index="iis_logs" sourcetype="iis"
+    (cs_uri_stem="/really-confidential-data.html" OR cs_uri_stem="/totally-not-sensitive-2025.csv" OR cs_uri_stem="/robots.txt")
+    | eval honeypot_uri=coalesce(cs_uri_stem, uri_path)
+    | eval user_agent=coalesce(cs_user_agent, cs_User_Agent, http_user_agent, User_Agent)
+    | eval src_ip=coalesce(c_ip, client_ip, src)
+    | eval method=coalesce(cs_method, method)
+    | fields _time host honeypot_uri src_ip user_agent method sc_status
+
+      ```
+    ![dash-2](./images/dash-2.png)      
+
+    > 💡 Toujours valider le search string avant d'ajouter au dashboard.  
+    ![dash-3](./images/dash-3.png)  
+    
+
+
+
+
+  - Ajout du deuxième panel : `Add Panel → New → Statistics Table`   
+    -  Title : Sources les plus actives - hits & fenêtre d'attaque  
     -  Time range : derniers 24h  
     -  Search (SPL) :  
       ```spl
@@ -1056,14 +1096,36 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
       | eval first_seen=strftime(first_seen, "%F %T"), last_seen=strftime(last_seen, "%F %T")
       | sort - hits
       ```
-    ![dash-2](./images/dash-2.png)      
+      ![dash-4](./images/dash-4.png)      
 
-    > 💡 Run le search string avant d'ajouter au dashboard pour s'assurer que les données qu'on souhaite extraire/exposer soit belle et bien comprises.    
-    ![dash-3](./images/dash-3.png)
-    
+    > 💡 Valider avec le search string avant d'ajouter au dashboard.   
 
 
-  - Ajout d'une Panel graphique : `Add Panel → New → Pie Chart → Add to Dashboard`
+
+
+
+  - Ajout d'un panel simple (single value) : `Add Panel → New → Single value`  
+    -  Title : Nombre d'accès (derniers 24h) 
+    -  Time range : derniers 24h  
+    -  Search (SPL) : 
+    ```spl
+     index="iis_logs" sourcetype="iis" 
+    (cs_uri_stem="/really-confidential-data.html" 
+     OR cs_uri_stem="/totally-not-sensitive-2025.csv" 
+     OR cs_uri_stem="/robots.txt")
+    | stats count AS total_access
+    ```  
+    ![dash-5](./images/dash-5.png)   
+
+    > 💡 UI : J'ai mis un gradient de couleurs passant de vert à rouge tout dépendant du nombre d'accès.  
+    ![dash-6](./images/dash-6.png)  
+
+
+
+
+
+
+  - Ajout d'un panel graphique (pie chart) : `Add Panel → New → Pie Chart`  
     -  Title : Répartition par IP source (Top 10)  
     -  Time range : derniers 24h  
     -  Search (SPL) : 
@@ -1074,24 +1136,25 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
     | sort - hits
     | head 10
     ```  
-    ![dash-4](./images/dash-4.png)   
+    ![dash-7](./images/dash-7.png)   
 
 
 
-TO DO DEMAIN :
-- documenter mon beau dashboard
-- finir avec un rapport soc classique (+MITRE)
-- closing remarks
-
-    
-  ---
-  
-  
- 
+  > ✅ Ajouter le dashboard à la page d'accueuil → `Set as home dashboard`  
+  > Il apparaîtra à chaque ouverture de session :  
+  ![dash-8](./images/dash-8.png)    
 
 
 
-  
+
+
+---
+
+## Phase 9 - Rapport SOC
+
+
+
+
 
 
 
