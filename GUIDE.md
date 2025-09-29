@@ -14,10 +14,16 @@
 - [Phase 4 — Déploiement du Universal Forwarder (SOC-W11)](#phase-4---déploiement-du-universal-forwarder-soc-w11)
 - [Phase 5 — Configuration du Honeypot](#phase-5---configuration-du-honeypot)
 - [Phase 6 — Configuration des Alertes](#phase-6---configuration-des-alertes)
+- [Phase 7 — Reconnaissance simulée](#phase-7---reconnaissance-simulee)
+- [Phase 8 — Flow SOC](#phase-8---flow-soc)
+
 
 
 
 ---
+
+
+
 
 
 ## Phase 1 - Réseaux virtuels
@@ -45,7 +51,14 @@ Mettre en place deux réseaux virtuels sous VMware pour le laboratoire :
   ![VMnet8](./images/vmnet8.png)
 
 
+
+
+
 ---
+
+
+
+
 
 ## Phase 2 - Configuration des VMs
 
@@ -61,7 +74,6 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
   - Disque : 100GB
   - NIC1 : Host-only (`10.7.0.10/24`)
   - NIC2 : NAT/DHCP (`172.16.0.x/24`) - temporaire
-
 
 
   **Configuration réseau** :
@@ -103,7 +115,11 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 > ⚠️ Prendre un snapshot de la VM juste avant d’installer Splunk, afin de pouvoir revenir rapidement en cas de problème.
 
+
+
 ---
+
+
 
 ### 🖥️ SOC-W11
   **Specs** : 
@@ -138,7 +154,13 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 > ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
 
+
+
+
 ---
+
+
+
 
 ### 🖥️ SOC-ATK
   **Specs** : 
@@ -180,7 +202,11 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 > ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
 
+
+
+
   ---
+
 
 
 
@@ -218,7 +244,11 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 > ⚠️ Prendre un snapshot "clean" de la VM en cas d'incident.
 
+
+
 ---
+
+
 
 ## 📊 Tableau Récapitulatif
 | VM                | OS                   | eth0 (Host-only) | eth1 (NAT/DHCP) | Rôle            |
@@ -232,11 +262,13 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 ---
 
+
+
+
 ## Phase 3 - Installation de Splunk Enterprise
 
 ### 🎯 Objectif  
 Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, configurer l’autostart et valider l’accès au tableau de bord depuis la station analyste.
-
 
 
 
@@ -249,14 +281,12 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
-
 ### 2. Connexion SSH 
   - Depuis la VM SOC-Workstation (Ubuntu Desktop), se connecter sur le serveur Ubuntu via SSH :  
     ```bash
     ssh splunk-admin@10.7.0.10
     ```
     ![ssh](./images/ssh.png)  
-
 
 
 
@@ -307,6 +337,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
+
 ### 📌 Bilan
   - Splunk installé, démarrage automatique configuré, service actif sur le port `8000`.  
   - Interface web accessible depuis la station analyste.    
@@ -318,13 +349,20 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
+
+
 ---
+
+
+
 
 ## Phase 4 - Déploiement du Universal Forwarder (SOC-W11)
 
 
+
 ### 🎯 Objectif
 Installer et configurer le **Splunk Universal Forwarder** sur la VM victime (SOC-W11), lui indiquer l’indexer (`10.7.0.10:9997`), définir les sources d’événements (Security, System, Application) et valider l’ingestion des événements dans l’index `win_logs`.  
+
 
 
 ### 1. Téléchargement du Forwarder
@@ -378,14 +416,11 @@ Même si l’IP de l’indexer (`10.7.0.10`) et le port de transmission (`9997`)
 
 
 
-
 ### 4. Définition des sources de logs via `inputs.conf`  
 Après avoir relié le UF à l’indexer (`outputs.conf`), définir quels logs Windows seront collectés.  
   
 Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf), dans un environnement **sans Deployment Server** (comme dans ce lab), cela se fait par l'entremise du fichier de configuration `inputs.conf`, localisé dans :  
   `C:\Program Files\SplunkUniversalForwarder\etc\system\local`   
-  
-  
   
   - `outputs.conf` → indique **destination** (où envoyer) les données (`10.7.0.10:9997`).  
     ![uf-config-1](./images/uf-config-1.png)    
@@ -430,8 +465,8 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
   - `splunk status` → renvoie `SplunkForwarder: Running`, confirmant que le daemon `splunkd` tourne en arrière-plan et que les logs sont prêts à être envoyés à l’indexer (`10.7.0.10`).  
 
 
-  
 
+  
 
 ### 5. Création de l'index `win_logs` 
   - Retour sur notre interface Splunk (`http://10.7.0.10:8000`)  
@@ -454,6 +489,8 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
       > ✅ Apparition rapide d’événements confirmant la bonne collecte des logs.
       
 
+
+
       
 ### 📌 Bilan  
   - Universal Forwarder installé et configuré avec succès sur SOC-W11  
@@ -467,7 +504,12 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
 
 
 
+
+
 ---
+
+
+
 
 
 
@@ -504,6 +546,8 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
     - Logging Fields : (voir capture)  
     ![verif-3](./images/verif-3.png)     
     ![verif-1](./images/verif-1.png)  
+
+
 
 
 ### 3. Créer le contenu du Honeypot
@@ -617,11 +661,12 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
      0;"*** WARNING ***";"Nice try!";"You just fell into a honeypot.";"💻";"Caught"
      1;"This incident has been logged.";"Your IP has been sent to Santa Claus.";"🎅";"Naughty List"
      ```  
-    - Enregistrer le fichier dans le répertoire IIS sous `C:\inetpub\wwwroot\really-confidential-data.html`   
+    - Enregistrer le fichier dans le répertoire IIS sous `C:\inetpub\wwwroot\totally-not-sensitive-2025.csv`   
     - Cliquer sur le lien de téléchargement pour vérifier le logging IIS.  
     ![iis-4](./images/iis-4.png)
  
     > 💡 Ce fichier ne contient évidemment aucune donnée réelle, uniquement un message d’avertissement destiné aux curieux non autorisés.  
+
 
 
 
@@ -640,6 +685,7 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
 
 
 
+
 ### 5. Création de l'index `iis_logs`
 Avant d’envoyer les journaux IIS vers Splunk, il faut créer un index de destination. Sans cet index, les logs seraient ignorés.   
   - Sur l'interface Splunk, aller sur `Settings → Indexes → New Index`.   
@@ -647,6 +693,8 @@ Avant d’envoyer les journaux IIS vers Splunk, il faut créer un index de desti
     - Sauvegarder.  
     ![iis-5](./images/iis-5.png)    
   > 💡 L'index apparaît ensuite dans la liste avec le statut Active et recevra les logs IIS.   
+
+
 
 
 
@@ -708,7 +756,11 @@ La prochaine étape consiste à mettre en place une alerte temps réel pour dét
 
 
 
+
+
 ---
+
+
 
 
 
@@ -722,14 +774,29 @@ Détecter, en temps réel, toute requête HTTP vers le honeypot `/really-confide
   - écrire dans `honeypot_hits.csv`.  
 
 
+
+
 ### **Créer l'alerte :**  
   - Depuis `Search & Reporting`, exécuter la requête :
     ```spl
-    index=iis_logs sourcetype=iis cs_uri_stem="/really-confidential-data.html"
-    ```
+    index=iis_logs sourcetype=iis (cs_uri_stem="/really-confidential-data.html" OR uri_path="/really-confidential-data.html")
+    | eval src_ip=coalesce(c_ip, client_ip, src)
+    | eval user_agent=coalesce(cs_user_agent, cs_User_Agent, http_user_agent, User_Agent)
+    | eval honeypot_uri=coalesce(cs_uri_stem, uri_path)
+    | eval readable_time=strftime(_time, "%F %T")
+    | table host src_ip readable_time user_agent honeypot_uri 
+
+    index=iis_logs sourcetype=iis (cs_uri_stem="/really-confidential-data.html" OR uri_path="/really-confidential-data.html")
+    | eval src_ip=coalesce(c_ip, client_ip, src)
+    | eval user_agent=coalesce(cs_user_agent, cs_User_Agent, http_user_agent, User_Agent)
+    | eval honeypot_uri=coalesce(cs_uri_stem, uri_path)
+    | eval readable_time=strftime(_time, "%F %T")
+     ```
+*******************************te***********terter********************************5r3543g3g34g34gdwerweriokfhwerohjtertr
+
   - Cliquer sur `Save As → Alert`  
     - Title : ALERTE - Accès Honeypot 
-    - Description : Déclenchée lors d’un accès à la page /really-confidential-data.html (reconnaissance/énumération). 
+    - Description : Déclenchée lors d’un accès à la page `/really-confidential-data.html` (reconnaissance/énumération). 
     - Permissions : Private (puisqu'on est dans un lab isolé).  
     - Alert Type : Real-time (pour détection immédiate).  
     - Expires : 30 jours  
@@ -745,14 +812,20 @@ Détecter, en temps réel, toute requête HTTP vers le honeypot `/really-confide
   > ✅ En résumé, l’alerte se déclenche dès la première visite du Honeypot, puis, grâce à un throttle de 5 minutes, les accès répétés sont ignorés. L’événement reste consigné et consultable, mais 1 seul e‑mail et 1 seule alerte sont envoyés pour chaque fenêtre d’incident.
 
 
+
+
+
 ### **Trigger Actions :**  
 
 Définir ce qui arrive lorsqu'une alerte se déclenche.    
+
+
 
 #### Action 1 – Add to Triggered Alerts  
 - **Severity :** High  
   ![alerte-2](./images/alerte-2.png)  
 > 💡 Toute visite de la page honeypot est par définition suspecte → sévérité haute.  
+
 
 
 #### Action 2 – Send Email
@@ -762,9 +835,11 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
    - L’offre gratuite fournit un serveur SMTP et une boîte *sandbox* suffisante pour les tests du SOC-LAB.  
   > 💡 **Email Sandbox** de Mailtrap est spécifiquement conçue pour tester l’envoi d’e-mails en environnement de test/développement, sans sortie vers l’extérieur.   
 
+
 2. **Récupérer les identifiants SMTP**
    - Dans le tableau de bord Mailtrap : Sandbox → SMTP credentials    
      ![alerte-3](./images/alerte-3.png)   
+
 
 3. **Configurer SMTP dans Splunk**  
   - Dans Splunk : Settings → Server Settings → Email Settings   
@@ -802,6 +877,8 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
     ![alerte-7](./images/alerte-7.png)   
 
 
+
+
     
 #### Action 3 – Output results to lookup
 Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/corrélation.  
@@ -816,13 +893,16 @@ Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/co
 
 
 
+
 ### Vérification end-to-end  
   Confirmer que l’alerte temps réel déclenche les 3 actions (Triggered Alerts, e-mail, lookup CSV) lors d’un accès à `/really-confidential-data.html`.   
+
   
   1) **Génération de l’événement**  
     - Depuis **SOC-Workstation**, ouvrir :    
       `http://10.7.0.20/really-confidential-data.html`    
       ![alerte-9](./images/alerte-9.png)    
+
   
   2) **Réception du e-mail d'alerte**  
     - Vérifier que **tous les champs** sont renseignés (Host, IP src, Time, User-Agent).  
@@ -844,20 +924,29 @@ Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/co
       ```
       ![alerte-13](./images/alerte-13.png)         
 
+
+
   > 📌 Bilan : pipeline validé — détection temps réel, e-mail, CSV lookup.  
+
+
 
 
 
 ---
 
 
-## Phase 7 — Validation de détection via reconnaissance simulée
+
+
+
+## Phase 7 — Reconnaissance simulée
 
 ### 🎯 Objectif
 Simuler une phase de reconnaissance/énumération côté attaquant et vérifier que l’accès au leurre `/really-confidential-data.html` déclenche l’alerte et alimente les logs.   
 
 > 💡 Démonstration volontairement simplifiée : l’objectif est de valider le pipeline de détection/alerte, pas de conduire une campagne offensive complète.  
 ---
+
+
 
 #### 1) Scan de ports (Nmap)
   - Depuis la VM Kali (SOC-ATK), lancer un TCP SYN scan furtif (`-sS`) avec détection de version (`-sV`) et scripts par défaut (`-sC`) à la machine victime (SOC-W11) :  
@@ -874,10 +963,9 @@ Simuler une phase de reconnaissance/énumération côté attaquant et vérifier 
 
   - Les résultats sont revenus rapidement : le port 80 est ouvert et sert du contenu via Microsoft IIS 10.0.  
     - Indices pertinents observés :  
-      - Page d’accueil 'IIS Windows' (bannière HTTP cohérente).  
-      - Présence de `/robots.txt` avec 2 entrées **Disallowed** (indice de ressources sensibles/cachées).  
-      - Exposition des leurres `/really-confidential-data.html` et `totally-not-sensitive-2025.csv`.  
-      - Méthode HTTP TRACE acceptée (mauvaise pratique / vecteur souvent signalé).  
+      - Présence de `/robots.txt` avec 2 entrées **Disallowed** (ressources cachées).  
+      - Leurres exposés : `/really-confidential-data.html` et `totally-not-sensitive-2025.csv`.  
+      - Méthode HTTP TRACE acceptée (mauvaise pratique).  
       - Hôte Microsoft Windows confirmé (résolution MAC/ARP).   
         ![atk-1](./images/atk-1.png)   
 
@@ -886,14 +974,14 @@ Simuler une phase de reconnaissance/énumération côté attaquant et vérifier 
 
 
 #### 2) Exploration
-Après avoir repéré `/really-confidential-data.html`, privilégier une collecte discrète via CLI pour réduire les artefacts forensiques : utiliser `curl/wget` plutôt qu’un navigateur.  
+Après avoir repéré `/really-confidential-data.html`, privilégier une collecte discrète en CLI pour réduire les artefacts forensiques : utiliser `curl/wget` plutôt qu’un navigateur.  
   - Consulter la page `/really-confidential-data.html` avec `curl` :   
       ```bash
       curl http://10.7.0.20/really-confidential-data.html
       ```
       ![atk-2](./images/atk-2.png)  
       ![atk-2.5](./images/atk-2.5.png)  
-      > 💡 La page simule des données sensibles avec lien de téléchargement.  
+      > 💡 La page simule des données sensibles et expose un lien de téléchargement.  
 
   - Télécharger le CSV associé avec `wget` :   
       ```bash 
@@ -906,27 +994,129 @@ Après avoir repéré `/really-confidential-data.html`, privilégier une collect
 
 
 
+
+
 ---
 
 
 
 
 
-## Phase 8 — 
 
-  - Détection SOC
-    - Accès à `/really-confidential-data.html` ➜ alerte déclenchée (e-mail via Mailtrap, entrée Triggered Alerts, écriture dans `honeypot_hits.csv`).  
-    ![detect-1](./images/detect-1.png)   
-    ![detect-1.5](./images/detect-1.5.png)    
-    - Téléchargement du CSV ➜ journalisé par IIS et visible dans Splunk, sans alerte dédiée (choix délibéré pour limiter bruit).  
-    ![detect-2](./images/detect-2.png)      
+## Phase 8 — Flow SOC
 
+### 🎯 Objectif
+Valider le flux opérationnel complet du lab :  
+  `accès au leurre → alerte temps réel → triage analyste → visualisation dans Splunk`  
+
+  1) Déclenchement
+  - Déclencheur : accès à `/really-confidential-data.html` depuis VM attaquante (SOC-ATK).  
+  - Flow : `alerte splunk → SMTP Mailtrap → soc-alerts@soc-admin.local`  
+    - Métadonnées observées dans l'e-mail :  
+        - Host : `SOC-W11`  
+        - IP src : `10.7.0.30`  
+        - Time : `2025-09-28 12:59:02`  
+        - User-Agent : `curl/8.15.0`  
+        ![mailtrap-1](./images/mailtrap-1.png)     
+        > 💡 Lecture rapide : sujet explicite, champs clés présents, lien direct `View results` vers Splunk.
+
+  
+
+  2) Triage analyste dans Splunk (N1)
+  - Depuis le lien de l’alerte, `View Results` et  `New Search` s’ouvre sur l’événement déclencheur (logs IIS).  
+      ![mailtrap-2](./images/mailtrap-2.png)  
+      ![mailtrap-3](./images/mailtrap-3.png)  
+    - En aggrandissant les indexed fields, on obtient plusieurs données pertinentes :  
+      ![mailtrap-4](./images/mailtrap-4.png)  
+  
+  3) Vérification téléchargement du CSV (progression de l'intrusion)  
+  - En modifiant la requête SPL, on peut voir que l'attaquant a également téléchargé le CSV :  
+      ![mailtrap-5](./images/mailtrap-5.png)   
+    > 💡 Signal SOC : séquence `curl` → `wget` = progression de kill chain du repérage/recon vers la collecte/exfiltration.  
+
+
+
+  4) Dashboard pour monitorer le Honeypot
+Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/quoi/quand/comment) et fournir un point d’entrée analyste (drilldown vers l’événement).
+  - Création : `Search & Reporting → Onglet Dashboards → Create new dashboard`  
+    - Nom : Accès Honeypot - Triage SOC    
+    - Description : Monitoring en temps réel des accès au honeypot IIS : IP source, user-agent, code HTTP et fréquence d'occurence — prêt pour triage et corrélation.  
+    - Permissions : Private (lab).  
+    - Type : Classic Dashboards.  
+    ![dash-1](./images/dash-1.png)   
+
+  - Ajout d'une Panel sommaire : `Add Panel → New → Events → Add to Dashboard`
+    -  Title : Accès Honeypot  
+    -  Time range : derniers 24h  
+    -  Search (SPL) :  
+      ```spl
+      index=iis_logs sourcetype=iis cs_uri_stem="/really-confidential-data.html"
+      | eval src_ip=coalesce(c_ip, client_ip, src), user_agent=coalesce(cs_User_Agent, cs_user_agent, http_user_agent, User_Agent)
+      | stats count AS hits values(sc_status) AS http_codes min(_time) AS first_seen max(_time) AS last_seen BY src_ip user_agent
+      | eval first_seen=strftime(first_seen, "%F %T"), last_seen=strftime(last_seen, "%F %T")
+      | sort - hits
+      ```
+    ![dash-2](./images/dash-2.png)      
+
+    > 💡 Run le search string avant d'ajouter au dashboard pour s'assurer que les données qu'on souhaite extraire/exposer soit belle et bien comprises.    
+    ![dash-3](./images/dash-3.png)
+    
+
+
+  - Ajout d'une Panel graphique : `Add Panel → New → Pie Chart → Add to Dashboard`
+    -  Title : Répartition par IP source (Top 10)  
+    -  Time range : derniers 24h  
+    -  Search (SPL) : 
+    ```spl
+    index=iis_logs sourcetype=iis (cs_uri_stem="/really-confidential-data.html" OR uri_path="/really-confidential-data.html")
+    | eval src_ip=coalesce(c_ip, client_ip, src)
+    | stats count AS hits by src_ip
+    | sort - hits
+    | head 10
+    ```  
+    ![dash-4](./images/dash-4.png)   
+
+
+
+TO DO DEMAIN :
+- documenter mon beau dashboard
+- finir avec un rapport soc classique (+MITRE)
+- closing remarks
+
+    
+  ---
+  
+  
  
 
 
 
   
----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
