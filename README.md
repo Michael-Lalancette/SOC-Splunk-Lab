@@ -1,5 +1,8 @@
 # 🛡️ SOC Lab avec Splunk
 
+![leurre-html](./images/leurre-html.png)
+
+
 ## 🎯 Objectif
 
 Mettre en place un SOC miniature dans un environnement virtuel, en combinant :  
