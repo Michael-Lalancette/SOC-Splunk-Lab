@@ -34,7 +34,7 @@ Réseaux :
 
 1. **Attaque** 
    - Scan réseau 
-   - Accès aux leurres (`/really-confidential-data.html` AND/OR `robots.txt`)
+   - Accès aux leurres (`/really-confidential-data.html`, `robots.txt`)
    - Téléchargement fichier CSV (`totally-not-sensitive-2025.csv`)  
 
 2. **Détection & Alerte** 
