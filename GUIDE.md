@@ -16,6 +16,7 @@
 - [Phase 6 — Configuration des Alertes](#phase-6---configuration-des-alertes)
 - [Phase 7 — Reconnaissance simulée](#phase-7---reconnaissance-simulee)
 - [Phase 8 — Flow SOC](#phase-8---flow-soc)
+- [Phase 9 — Rapport SOC](#phase-9---rapport-soc)
 
 
 
@@ -1018,8 +1019,7 @@ Valider le flux opérationnel complet du lab :
   
 
   2) 👨‍💻 **Triage analyste dans Splunk (N1)**
-  - Depuis le lien de l’alerte, `View Results` et  `New Search` s’ouvre sur l’événement déclencheur (logs IIS).  
-      ![mailtrap-2](./images/mailtrap-2.png)  
+  - Après avoir suivi le lien de l’alerte, cliquer sur `View Results` et  `New Search` va s’ouvrir sur l’événement déclencheur (logs IIS).   
       ![mailtrap-3](./images/mailtrap-3.png)  
     - En aggrandissant les indexed fields, on obtient plusieurs données pertinentes :  
       ![mailtrap-4](./images/mailtrap-4.png)  
@@ -1030,7 +1030,12 @@ Valider le flux opérationnel complet du lab :
 
   
   3) 👨‍💻 **Vérification téléchargement du CSV (progression de l'intrusion)**  
-  - En modifiant la requête SPL, on peut voir que l'attaquant a également téléchargé le CSV :  
+  - Modifier la requête SPL :  
+      ```spl
+    index="iis_logs" sourcetype="iis" cs_uri_stem="/totally-not-sensitive-2025.csv
+    | fields time host cs_uri_stem c_ip cs_User_Agent cs_method sc_status
+      ```  
+  - Traces que l'attaquant a également téléchargé le CSV :  
       ![mailtrap-5](./images/mailtrap-5.png)   
     > 💡 Signal SOC : séquence `curl` → `wget` = progression de kill chain du repérage/recon vers la collecte/exfiltration.  
 
@@ -1143,32 +1148,129 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
 
 ---
 
-## Phase 9 - Rapport d'incident SOC
+## Phase 9 - Rapport SOC
 
-#### Résumé exécutif
-  Le lab SOC a détecté et analysé une tentative d’accès non autorisée au leurre `/really-confidential-data.html`. L’événement principal provient d’une VM Kali (`10.7.0.30`) utilisant `curl`, suivi d’un téléchargement confirmé du leurre `/totally-not-sensitive-2025.csv` via `Wget`, indiquant une progression du repérage vers la collecte/exfiltration.  
-  > ✅ Le pipeline de détection (`SPL → alerte → SMTP`) et le dashboard Splunk ont fonctionné comme prévu.  
+### 📌 Résumé exécutif
+Le SOC-LAB a détecté et analysé des accès non autorisés au fichier leurre `/really-confidential-data.html`.  
+L’attaquant identifié (VM Kali `10.7.0.30`) a utilisé `curl` pour consulter la page puis `Wget` pour télécharger le faux fichier `/totally-not-sensitive-2025.csv`.  
+Cette séquence illustre une progression classique : **reconnaissance → accès → tentative d’exfiltration**.  
+  
+  > ✅ Le pipeline de détection/alerte (`SPL → alerte → SMTP`) et le dashboard Splunk ont fonctionné comme prévu, confirmant l'efficacité opérationnelle et la couverture de la menace simulée.    
 
 
 
-
-#### Scope d'investigation  
+### 🔍 Scope d'investigation  
+L’investigation s’est appuyée sur les logs d’accès HTTP collectés dans Splunk :  
 - Index analysé : `iis_logs`  
-- Sourcetype : `iis`  
-- Fichier logs : `C:\inetpub\logs\LogFiles\W3SVC1\...`
-- 
+- Sourcetype : `iis`   
+- Source logs : `C:\inetpub\logs\LogFiles\W3SVC1\...`  
+- Timeframe : `2025-09-29 17:41:06 - 17:43:23 EDT`
+  
+Champs clés analysés :  
+- `cs_uri_stem` : Ressource consultée
+- `cs_User_Agent` : Méthode/outil d’accès  
+- `c_ip` : Adresse IP source
+- `sc_status` : Code HTTP retourné  
+- `_time` : Horodatage de l’événement  
+
+
+
+
+### ⏱ Chronologie des Événements
+
+| **Timestamp** | **Description**                                                    | **Outil / Indicateur**    |
+| ---           | ---                                                                | ---                       |
+| `17:41:06`    | Scan `nmap` de la cible `10.7.0.20` depuis SOC-ATK                 | `Nmap+Scripting+Engine`   |
+| `17:42:11`    | Accès à `/really-confidential-data.html` depuis SOC-ATK            | `curl/8.15.0`             |
+| `17:43:09`    | Alerte déclenchée → Notification e-mail (Mailtrap)                 | Email Headers (SMTP)      |
+| `17:43:12`    | Alerte déclenchée → ALERTE - Accès Honeypot (Splunk)               | `Splunk Triggered Alerts` |
+| `17:43:23`    | Téléchargement de `/totally-not-sensitive-2025.csv` depuis SOC-ATK | `Wget/1.25.0`             |
+
+
+
+
+### 🕵️‍♂️ Analyse détaillée des événements
+1. Scan `nmap` de la machine cible `10.7.0.20`.  
+   - Horodatage : `2025-09-29 17:41:06`  
+   - IP source : `10.7.0.30` (SOC-ATK)  
+   - User-Agent : `robots.txt`  
+   - Code HTTP : `200`  
+   - Host : `10.7.0.20` (SOC-W11)  
+   > ✅ Début de la phase de RECONNAISSANCE.    
+
+2. Accès `/really-confidential-data.html`
+   - Horodatage : `2025-09-29 17:42:11`  
+   - IP source : `10.7.0.30` (SOC-ATK) 
+   - User-Agent : `curl/8.14.1`  
+   - Code HTTP : `200`  
+   - Host : `10.7.0.20` (SOC-W11)  
+   > ✅ L'attaquant confirme la découverte du leurre.    
+
+
+3. Accès `/totally-not-sensitive-2025.csv`
+   - Horodatage : `2025-09-29 17:43:23`  
+   - IP source : `10.7.0.30` (SOC-ATK)  
+   - User-Agent : `Wget/1.25.0`  
+   - Code HTTP : `200`  
+   - Host : `10.7.0.20` (SOC-W11)  
+   > ✅ Tentative d'exfiltration simulée.       
+
+
+
+
+### ⚙️ Analyse du Workflow
+
+| **Composant**         | **Résultat**                                              |
+| ---                   | ---                                                       |
+| Alerte en temps réel  | Déclenchée dès le premier accès au leurre                 |
+| Throttling            | Fonctionnel, pas de spam                                  |
+| Notification e-mail   | Reçu via Mailtrap (`soc-alerts@soc-admin.local`)          |
+| Dashboard             | Mis à jour en temps réel avec tous les accès au honeypot  |
 
 
 
 
 
+### 🎯 MITRE ATT&CK Mapping
+
+| **Tactic**        | **Technique ID & Name** | **Description / Justification** |
+|-------------------|--------------------------|--------------------------------|
+| Reconnaissance | [T1595.002 – Active Scanning: Vulnerability Scanning](https://attack.mitre.org/techniques/T1595/002/) | Scan Nmap avec `-sS -sV -sC` pour identifier services et ports ouverts. |
+| Discovery     | [T1046 – Network Service Scanning](https://attack.mitre.org/techniques/T1046/) | Enumeration des services exposés sur le serveur IIS. |
+| Discovery     | [T1592.004 – Gather Victim Host Information: Client Configurations](https://attack.mitre.org/techniques/T1592/004/) | Récupération de la version du serveur IIS (10.0) via bannières HTTP. |
+| Command & Control | [T1071.001 – Application Layer Protocol: Web Protocols](https://attack.mitre.org/techniques/T1071/001/) | Utilisation de `curl` et `wget` via HTTP pour interagir avec la cible. |
 
 
 
 
+### 📂 Leçons tirées
+
+
+#### 1. Tracessss
+> Les outils (`curl`, `wget`, `nmap`) laissent des traces nettes. La majorité des intrusions exploitables n’utilisent pas toujours des techniques avancées : les logs bien analysés suffisent à les détecter.   
+
+
+#### 2. Contexte est ROI
+> Une log isolé ne dit pas grand-chose. C’est la corrélation des champs (`IP, User-Agent, URI, code HTTP`) qui transforme un simple événement en **indicateur d’attaque**.   
+
+
+#### 3. 'Chaîne' SOC  
+> La valeur vient de l’ensemble : `logs → collecte → corrélation → alerte → triage → dashboard`.
+  > Chaque maillon doit fonctionner et être relié correctement.  
+
+
+#### 4. Vision immédiate
+> Les dashboards rendent les tendances et comportements lisibles en temps réel.  
+
+
+#### 5. Logique d'adversaire
+> Simuler un attaquant (`scan → accès → téléchargement`) oblige à raisonner en termes de kill chain et non en événements isolés. C’est cette logique qui rapproche le lab de la réalité.  
 
 
 
+
+### ✨ Conclusion
+Avec ce projet, j’ai relié tous les éléments : configuration réseau, collecte des logs, création d’alertes, investigation et visualisation. Ce lab m’a donné une expérience pratique de ce qu’implique réellement l’exploitation d’un SOC à petite échelle. Plus qu’un simple montage technique, il m’a permis de mieux comprendre comment fonctionne **la surveillance, l’analyse et la réponse aux incidents dans un environnement réel.**  
 
 
 
