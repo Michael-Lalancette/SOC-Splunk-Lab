@@ -1,15 +1,7 @@
 ## 📑 Table des matières
 
 - [Phase 1 — Réseaux virtuels](#phase-1---réseaux-virtuels)
-  - [VMnet1 (Host-Only)](#vmnet1-host-only)
-  - [VMnet8 (NAT/DHCP)](#vmnet8-natdhcp)
-
 - [Phase 2 — Configuration des VMs](#phase-2---configuration-des-vms)
-  - [SOC-Splunk-Server](#️-soc-splunk-server)
-  - [SOC-W11](#️-soc-w11)
-  - [SOC-ATK](#️-soc-atk)
-  - [SOC-Workstation](#️-soc-workstation)
-
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
 - [Phase 4 — Déploiement du Universal Forwarder (SOC-W11)](#phase-4---déploiement-du-universal-forwarder-soc-w11)
 - [Phase 5 — Configuration du Honeypot](#phase-5---configuration-du-honeypot)
