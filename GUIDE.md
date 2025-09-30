@@ -2,10 +2,10 @@
 
 - [Phase 1 — Réseaux virtuels](#phase-1---réseaux-virtuels)
 - [Phase 2 — Configuration des VMs](#phase-2---configuration-des-vms)
-- [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
-- [Phase 4 — Déploiement du Universal Forwarder](#phase-4---déploiement-du-universal-forwarder)
-- [Phase 5 — Configuration du Honeypot](#phase-5---configuration-du-honeypot)
-- [Phase 6 — Configuration des Alertes](#phase-6---configuration-des-alertes)
+- [Phase 3 — Splunk Enterprise](#phase-3---splunk-enterprise)
+- [Phase 4 — Universal Forwarder](#phase-4---universal-forwarder)
+- [Phase 5 — Honeypot](#phase-5---honeypot)
+- [Phase 6 — Alerte](#phase-6---alerte)
 - [Phase 7 — Reconnaissance](#phase-7---reconnaissance)
 - [Phase 8 — Flow SOC](#phase-8---flow-soc)
 - [Phase 9 — Rapport SOC](#phase-9---rapport-soc)
@@ -56,7 +56,7 @@ Mettre en place deux réseaux virtuels sous VMware pour le laboratoire :
 ## Phase 2 - Configuration des VMs
 
 ### 🎯 Objectif
-Déployer et préparer les machines virtuelles du laboratoire : définir les ressources, configurer les interfaces réseau, installer les paquets de base, et effectuer des vérifications simples avant la phase d’application.
+Déployer et préparer les machines virtuelles du laboratoire : définir les ressources, configurer les interfaces réseau, installer les paquets de base, et effectuer des vérifications simples.
 
 
 ### 🖥️ SOC-Splunk-Server
@@ -258,7 +258,7 @@ Déployer et préparer les machines virtuelles du laboratoire : définir les res
 
 
 
-## Phase 3 - Installation de Splunk Enterprise
+## Phase 3 - Splunk Enterprise
 
 ### 🎯 Objectif  
 Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, configurer l’autostart et valider l’accès au tableau de bord depuis la station analyste.
@@ -338,7 +338,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
-> ⚠️ Snapshot : prenez un snapshot de la VM SOC‑Splunk‑Server avant de poursuivre.
+> ⚠️ Snapshot : Prendre un snapshot "clean" du serveur Splunk en cas d'incident.
 
 
 
@@ -349,7 +349,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
-## Phase 4 - Déploiement du Universal Forwarder
+## Phase 4 - Universal Forwarder
 
 
 
@@ -415,9 +415,9 @@ Après avoir relié le UF à l’indexer (`outputs.conf`), définir quels logs W
 Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf), dans un environnement **sans Deployment Server** (comme dans ce lab), cela se fait par l'entremise du fichier de configuration `inputs.conf`, localisé dans :  
   `C:\Program Files\SplunkUniversalForwarder\etc\system\local`   
   
-  - `outputs.conf` → indique **destination** (où envoyer) les données (`10.7.0.10:9997`).  
+  - `outputs.conf` → indique la **destination** (où envoyer) les données (`10.7.0.10:9997`).  
     ![uf-config-1](./images/uf-config-1.png)    
-  - `inputs.conf` → indique **sources** à collecter (ex : logs Windows).    
+  - `inputs.conf` → indique les **sources** à collecter (ex : logs Windows).    
 
   - Créer manuellement `inputs.conf`, puis ajouter les **stanzas** suivants :   
     ```ini
@@ -493,7 +493,7 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
     
     
 
-> ⚠️ Snapshot : prenez un snapshot des VMs SOC‑Splunk‑Server et SOC-W11 avant de poursuivre.  
+> ⚠️ Snapshot : prendre un snapshot des VMs SOC‑Splunk‑Server et SOC-W11 avant de poursuivre.  
 
 
 
@@ -506,7 +506,7 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
 
 
 
-## Phase 5 - Configuration du Honeypot
+## Phase 5 - Honeypot
 
 ### 🎯 Objectif  
   - Déployer un honeypot web sur IIS dans la VM SOC-W11 pour détecter des activités de reconnaissance.   
@@ -673,7 +673,7 @@ Selon la [documentation officielle](https://docs.splunk.com/Documentation/Splunk
     Disallow: /really-confidential-data.html
     Disallow: /totally-not-sensitive-2025.csv
     ```
-  > 💡 Ce fichier ne constitue en aucun cas une mesure de sécurité ; au contraire, il sert volontairement d’appât : il trahit la présence de ressources fictives aux outils de reconnaissance automatisés (gobuster, dirb, nikto, etc.).
+  > 💡 Ce fichier ne constitue en aucun cas une mesure de sécurité ; au contraire, il sert volontairement d’appât : il trahit la présence de ressources fictives aux outils de reconnaissance automatisés (gobuster, dirb, etc.).
 
 
 
@@ -758,7 +758,7 @@ La prochaine étape consiste à mettre en place une alerte temps réel pour dét
 
 
 
-## Phase 6 - Configuration des Alertes
+## Phase 6 - Alerte
 
 ### 🎯 Objectif  
 Détecter, en temps réel, toute requête HTTP vers le honeypot `/really-confidential-data.html` et :
@@ -818,7 +818,7 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
 
 1. **Créer un compte Mailtrap**
    - S'inscrire sur [Mailtrap.io](https://mailtrap.io).  
-   - L’offre gratuite fournit un serveur SMTP et une boîte *sandbox* suffisante pour les tests du SOC-LAB.  
+   - L’offre gratuite fournit un serveur SMTP et une boîte *sandbox* (amplement suffisant pour les tests du SOC-LAB).  
   > 💡 **Email Sandbox** de Mailtrap est spécifiquement conçue pour tester l’envoi d’e-mails en environnement de test/développement, sans sortie vers l’extérieur.   
 
 
@@ -830,7 +830,7 @@ Définir ce qui arrive lorsqu'une alerte se déclenche.
 3. **Configurer SMTP dans Splunk**  
   - Dans Splunk : Settings → Server Settings → Email Settings   
   - Définir le serveur utilisé par Splunk pour acheminer les alertes :  
-    - Mail host : `sandbox.smtp.mailtrap.io`  
+    - Mail host : `sandbox.smtp.mailtrap.io:587`  
     - Email security : Enable TLS  
     - Username : `62d2abc10f2b15`  
     - Password : `*********`  
@@ -924,11 +924,11 @@ Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/co
 
 
 
-## Phase 7 - Reconnaissance simulée
+## Phase 7 - Reconnaissance
 
 
 ### 🎯 Objectif
-Simuler une phase de reconnaissance/énumération côté attaquant et vérifier que l’accès au leurre `/really-confidential-data.html` déclenche l’alerte et alimente les logs.   
+Simuler une phase de reconnaissance de la perspective d'un attaquant et vérifier que l’accès au leurre `/really-confidential-data.html` déclenche l’alerte et alimente les logs.   
 
 > 💡 Démonstration volontairement simplifiée : l’objectif est de valider le pipeline de détection/alerte, pas de conduire une campagne offensive complète.  
 ---
@@ -997,12 +997,12 @@ Valider le flux opérationnel complet du lab :
   `accès au leurre → alerte temps réel → triage analyste → visualisation dans Splunk`  
 
   1) 🚨 **Déclenchement**
-  - Déclencheur : accès à `/really-confidential-data.html` depuis VM attaquante (SOC-ATK).  
+  - Déclencheur : accès à `/really-confidential-data.html` depuis `10.7.0.30` (SOC-ATK).  
   - Flow : `alerte splunk → SMTP Mailtrap → soc-alerts@soc-admin.local`  
     - Métadonnées observées dans l'e-mail :  
         - Host : `SOC-W11`  
         - IP src : `10.7.0.30`  
-        - Time : `2025-09-28 12:59:02`  
+        - Time : `2025-09-29 17:42:11`  
         - User-Agent : `curl/8.15.0`  
         ![mailtrap-1](./images/mailtrap-1.png)     
         > 💡 Lecture rapide : sujet explicite, champs clés présents, lien direct `View results` vers Splunk.
@@ -1037,8 +1037,8 @@ Valider le flux opérationnel complet du lab :
 
 
 
-  4) 📊 **Dashboard pour monitorer le Honeypot**
-Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/quoi/quand/comment) et fournir un point d’entrée analyste.  
+  4) 📊 **Dashboard pour monitorer le Honeypot**  
+Permet de centraliser la visibilité sur les accès au leurre afin de détecter et analyser rapidement les tentatives d’intrusion. Le tableau de bord facilite le triage (qui/quoi/quand/comment), fournit un point d’entrée unique pour l’analyste et permet d’enrichir les investigations avec des données contextuelles.    
   
   - Création : `Search & Reporting → Onglet Dashboards → Create new dashboard`  
     - Nom : Dashboard - Accès Honeypot  
