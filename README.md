@@ -9,12 +9,12 @@ Mettre en place un SOC miniature dans un environnement virtuel, en combinant :
   - VM Kali pour simuler l’attaquant  
   - Station analyste pour le triage et la visualisation  
 
-> 💡 Le but : tester de bout en bout un flux SOC ; collecte → détection → alerte → triage → visualisation.  
+> 💡 Tester *de bout en bout* : `collecte → détection → alerte → triage → visualisation`, autour d’un honeypot IIS et de Splunk Enterprise.  
 
 
 
 
-## 🖥️ Environnement
+## 🖥️ Architecture
 VMs : 
 - SOC-Splunk-Server (`10.7.0.10`) : SIEM, collecte et corrélation des logs  
 - SOC-W11 (`10.7.0.20`)  : Windows 11, victime avec honeypot IIS + Forwarder  
@@ -23,7 +23,7 @@ VMs :
 
 Réseaux :  
 - Host-Only (`10.7.0.0/24`) pour communication interne (isolé)   
-- NAT (`172.16.0.0/24`) pour mises à jour/téléchargements temporaires
+- NAT (`172.16.0.0/24`) pour mises à jour/téléchargements temporaires  
 
 ![workflow](./images/workflow.png)
 
@@ -33,30 +33,30 @@ Réseaux :
 ## ⚡ Workflow opérationnel
 
 1. **Attaque** 
-   - Scan réseau 
-   - Accès aux leurres (`/really-confidential-data.html`, `robots.txt`)
-   - Téléchargement fichier CSV (`totally-not-sensitive-2025.csv`)  
+   - Scan réseau depuis Kali  
+   - Accès aux leurres (`/really-confidential-data.html`, `robots.txt`)  
+   - Téléchargement fichier CSV (`totally-not-sensitive-2025.csv`)   
 
 2. **Détection & Alerte** 
-   - Splunk indexe les logs IIS (`iis_logs`)
-   - Détection via SPL (URI ciblés)  
+   - Splunk indexe les logs IIS (`iis_logs`)  
+   - Détection via SPL (URI ciblés)   
    - Alerte en temps réel → Notification e-mail (Mailtrap)  
 
 3. **Triage & Investigation**  
    - Analyste SOC corrèle champs clés (`IP, User-Agent, URI, code HTTP`)  
-   - Confirmation de la séquence kill chain  
+   - Kill chain (`reconnaissance → accès → exfiltration`)  
 
 4. **Visualisation**  
-   - Dashboard Splunk → Vue en temps réel des accès honeypot  
+   - Dashboard Splunk → Suivi en temps réel des accès honeypot, sources actives, tendances  
    - Tableaux, graphiques, indicateurs d’accès  
 
 
 
 ## 📊 Résultats
-  - Pipeline SOC complet : logs collectés, corrélés et visualisés.  
-  - Alertes en temps réel : e-mail + Triggered Alerts + CSV lookup.  
-  - Dashboard Splunk : suivi des accès honeypot, sources actives, tendances.  
-  - Simulation adversaire : détection efficace d’une séquence reconnaissance → accès → exfiltration.
+  - ✅ Pipeline SOC complet validé : de la collecte des logs à la visualisation.    
+  - ✅ Alertes en temps réel fonctionnelles : e-mail + Triggered Alerts + CSV lookup.  
+  - ✅ Dashboard Splunk : suivi des accès honeypot, sources actives, tendances.  
+  - ✅ Simulation adversaire : détection efficace d’une séquence reconnaissance → accès → exfiltration.  
 
 
 ## 🧠 Leçons tirées
@@ -71,7 +71,7 @@ Réseaux :
 
 ## 📂 Documentation
 
-➡️ **Guide des phases détaillées** : [👉 c'est ici!](GUIDE.md)
+[👉 Guide détaillé des phases](GUIDE.md)  
 
 
 
@@ -80,8 +80,6 @@ Réseaux :
 Ce projet est un lab pédagogique destiné à l’apprentissage et à la simulation de scénarios SOC.  
 - Il ne constitue pas une solution de sécurité prête à l’emploi.  
 - Les configurations et attaques simulées sont simplifiées à des fins d’étude.  
-
-> 💡 Utiliser ce lab comme base d’entraînement ou de démonstration, mais pas comme substitut à une infrastructure SOC professionnelle.  
 
 
 
