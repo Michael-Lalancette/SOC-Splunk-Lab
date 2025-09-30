@@ -1235,7 +1235,7 @@ Champs clés analysés :
 
 
 
-### 📂 Leçons tirées
+### 🧠 Leçons tirées
 
 
 #### 1. Tracessss
