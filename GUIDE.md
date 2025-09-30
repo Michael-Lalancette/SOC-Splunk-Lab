@@ -1144,12 +1144,21 @@ Permet de centraliser la visibilité sur les accès au leurre afin de détecter 
 ## Phase 9 - Rapport SOC
 
 ### 📌 Résumé exécutif
-Le SOC-LAB a détecté et analysé des accès non autorisés au fichier leurre `/really-confidential-data.html`.  
-L’attaquant (SOC-ATK `10.7.0.30`) a utilisé `curl` pour consulter la page puis `Wget` pour télécharger le faux fichier `/totally-not-sensitive-2025.csv`, illustrant la progression `reconnaissance → accès → tentative d’exfiltration`.  
-  
-  > ✅ Le pipeline de détection/alerte (`SPL → alerte → SMTP`) et le dashboard Splunk ont fonctionné comme prévu, confirmant l'efficacité opérationnelle et la couverture de la menace simulée.    
+
+Le SOC-LAB a permis de démontrer, dans un environnement contrôlé, la détection et l’analyse complètes d’une tentative d’intrusion sur un honeypot IIS. L’attaquant simulé (`SOC-ATK — 10.7.0.30`) a conduit une reconnaissance réseau, découvert les ressources exposées dans `robots.txt`, accédé au leurre `/really-confidential-data.html` à l’aide de `curl`, puis téléchargé le faux fichier `totally-not-sensitive-2025.csv` via `wget`. Cette séquence illustre une progression typique reconnaissance → accès initial → collecte/exfiltration.  
+
+Le pipeline de sécurité a réagi conformément aux attentes :  
+  - Collecte & indexation des logs IIS dans Splunk (`iis_logs`)  
+  - Détection en temps réel via requête SPL dédiée  
+  - Alerte haute priorité générée automatiquement (Triggered Alerts)  
+  - Notification par e-mail transmise via Mailtrap  
+  - Journalisation complémentaire dans le fichier `honeypot_hits.csv`  
+  - Dashboard Splunk offrant une visibilité immédiate sur l’IP source, le User-Agent et la chronologie des événements  
+
+> ✅ Résultat : un flux SOC complet, opérationnel et reproductible dans un environnement de lab.  
 
 
+ 
 
 ### 🔍 Scope d'investigation  
 L’investigation s’est appuyée sur les logs d’accès HTTP collectés dans Splunk :  
