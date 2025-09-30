@@ -3,10 +3,10 @@
 - [Phase 1 — Réseaux virtuels](#phase-1---réseaux-virtuels)
 - [Phase 2 — Configuration des VMs](#phase-2---configuration-des-vms)
 - [Phase 3 — Installation de Splunk Enterprise](#phase-3---installation-de-splunk-enterprise)
-- [Phase 4 — Déploiement du Universal Forwarder (SOC-W11)](#phase-4---déploiement-du-universal-forwarder-soc-w11)
+- [Phase 4 — Déploiement du Universal Forwarder](#phase-4---déploiement-du-universal-forwarder)
 - [Phase 5 — Configuration du Honeypot](#phase-5---configuration-du-honeypot)
 - [Phase 6 — Configuration des Alertes](#phase-6---configuration-des-alertes)
-- [Phase 7 — Reconnaissance simulée](#phase-7---reconnaissance-simulee)
+- [Phase 7 — Reconnaissance](#phase-7---reconnaissance)
 - [Phase 8 — Flow SOC](#phase-8---flow-soc)
 - [Phase 9 — Rapport SOC](#phase-9---rapport-soc)
 
@@ -349,7 +349,7 @@ Installer Splunk Enterprise sur la VM `SOC-Splunk-Server`, activer le service, c
 
 
 
-## Phase 4 - Déploiement du Universal Forwarder (SOC-W11)
+## Phase 4 - Déploiement du Universal Forwarder
 
 
 
@@ -1025,8 +1025,8 @@ Valider le flux opérationnel complet du lab :
   3) 👨‍💻 **Vérification téléchargement du CSV (progression de l'intrusion)**  
   - Modifier la requête SPL :  
       ```spl
-    index="iis_logs" sourcetype="iis" cs_uri_stem="/totally-not-sensitive-2025.csv
-    | fields time host cs_uri_stem c_ip cs_User_Agent cs_method sc_status
+    index="iis_logs" sourcetype="iis" cs_uri_stem="/totally-not-sensitive-2025.csv"
+    | fields _time host cs_uri_stem c_ip cs_User_Agent cs_method sc_status
       ```  
   - Traces que l'attaquant a également téléchargé le CSV :  
       ![mailtrap-5](./images/mailtrap-5.png)   
@@ -1131,7 +1131,7 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
 
 
 
-    > ✅ Ajouter le dashboard à la page d'accueuil → `Set as home dashboard`  
+    > ✅ Ajouter le dashboard à la page d'accueil → `Set as home dashboard`  
     > Il apparaîtra à chaque ouverture de session :  
     ![dash-8](./images/dash-8.png)    
 
@@ -1145,8 +1145,7 @@ Centraliser la visibilité sur les accès au leurre, accélérer le triage (qui/
 
 ### 📌 Résumé exécutif
 Le SOC-LAB a détecté et analysé des accès non autorisés au fichier leurre `/really-confidential-data.html`.  
-L’attaquant identifié (VM Kali `10.7.0.30`) a utilisé `curl` pour consulter la page puis `Wget` pour télécharger le faux fichier `/totally-not-sensitive-2025.csv`.  
-Cette séquence illustre une progression classique : **reconnaissance → accès → tentative d’exfiltration**.  
+L’attaquant (SOC-ATK `10.7.0.30`) a utilisé `curl` pour consulter la page puis `Wget` pour télécharger le faux fichier `/totally-not-sensitive-2025.csv`, illustrant la progression `reconnaissance → accès → tentative d’exfiltration`.  
   
   > ✅ Le pipeline de détection/alerte (`SPL → alerte → SMTP`) et le dashboard Splunk ont fonctionné comme prévu, confirmant l'efficacité opérationnelle et la couverture de la menace simulée.    
 
@@ -1194,7 +1193,7 @@ Champs clés analysés :
 2. Accès `/really-confidential-data.html`
    - Horodatage : `2025-09-29 17:42:11`  
    - IP source : `10.7.0.30` (SOC-ATK) 
-   - User-Agent : `curl/8.14.1`  
+   - User-Agent : `curl/8.15.0`  
    - Code HTTP : `200`  
    - Host : `10.7.0.20` (SOC-W11)  
    > ✅ L'attaquant confirme la découverte du leurre.    
@@ -1240,11 +1239,10 @@ Champs clés analysés :
 
 
 #### 1. Tracessss
-> Les outils (`curl`, `wget`, `nmap`) laissent des traces nettes. La majorité des intrusions exploitables n’utilisent pas toujours des techniques avancées : les logs bien analysés suffisent à les détecter.   
-
+> Les outils (`curl`, `wget`, `nmap`) laissent des empreintes exploitables dans les logs.
 
 #### 2. Contexte est ROI
-> Une log isolé ne dit pas grand-chose. C’est la corrélation des champs (`IP, User-Agent, URI, code HTTP`) qui transforme un simple événement en **indicateur d’attaque**.   
+> Un log isolé ne dit pas grand-chose. C’est la corrélation des champs (`IP, User-Agent, URI, code HTTP`) qui transforme un simple événement en signal d'attaque.   
 
 
 #### 3. 'Chaîne' SOC  
