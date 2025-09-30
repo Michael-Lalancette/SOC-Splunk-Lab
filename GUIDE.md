@@ -924,7 +924,7 @@ Consigner chaque hit sur la page honeypot dans un fichier CSV pour historique/co
 
 
 
-## Phase 7 — Reconnaissance simulée
+## Phase 7 - Reconnaissance simulée
 
 ### 🎯 Objectif
 Simuler une phase de reconnaissance/énumération côté attaquant et vérifier que l’accès au leurre `/really-confidential-data.html` déclenche l’alerte et alimente les logs.   
