@@ -989,7 +989,7 @@ Après avoir repéré `/really-confidential-data.html`, privilégier une collect
 
 
 
-## Phase 8 — Flow SOC
+## Phase 8 - Flow SOC
 
 ### 🎯 Objectif
 Valider le flux opérationnel complet du lab :  
